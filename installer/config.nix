@@ -6,19 +6,36 @@
   ...
 }:
 {
-  nix.settings = {
-    extra-experimental-features = [
-      "nix-command"
-      "flakes"
-    ];
-    flake-registry = "";
-    accept-flake-config = true;
-  };
-  nix.channel.enable = false;
+  services.getty.autologinUser = lib.mkForce "root";
+  nix =
+    let
+      flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
+    in
+    {
+      settings = {
+        experimental-features = [
+          "nix-command"
+          "flakes"
+        ];
+        flake-registry = "";
+        accept-flake-config = true;
+        nix-path = config.nix.nixPath;
+      };
+      registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
+      nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
+      channel.enable = false;
+    };
 
   boot.loader.timeout = lib.mkForce 0;
-  services.getty.autologinUser = lib.mkForce "root";
   zramSwap.enable = true;
+  services.dbus.implementation = "broker";
+
+  boot.swraid = {
+    enable = true;
+    mdadmConf = ''
+      MAILADDR samuel.mens@openmesh.network
+    '';
+  };
   networking.nameservers = [
     "1.1.1.1"
     "8.8.8.8"
@@ -40,10 +57,17 @@
       pkgs.jq
       pkgs.curl
       pkgs.nix
-      inputs.disko.packages.${pkgs.stdenv.hostPlatform.system}.default
+      pkgs.disko
       pkgs.nixos-facter
       pkgs.sbctl
       pkgs.clevis
+      # Disko dependencies
+      pkgs.bash
+      pkgs.gptfdisk
+      pkgs.parted
+      pkgs.dosfstools
+      pkgs.mdadm
+      pkgs.cryptsetup
       pkgs.btrfs-progs
     ];
     script = lib.readFile ./install.sh;
@@ -52,7 +76,6 @@
   system.stateVersion = config.system.nixos.release;
 
   # Reduce closure size (https://github.com/nix-community/nixos-images/blob/main/nix/noninteractive.nix)
-  nix.registry = lib.mkForce { };
   environment.defaultPackages = lib.mkForce [ ];
   system.extraDependencies = lib.mkForce [ ];
 
@@ -68,6 +91,4 @@
   # Disable unused programs
   programs.nano.enable = false;
   security.sudo.enable = false;
-
-  services.dbus.implementation = "broker";
 }

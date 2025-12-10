@@ -1,4 +1,5 @@
-{ ... }:
+{ inputs }:
+{ config, lib, ... }:
 {
   config = {
     boot.loader.limine = {
@@ -27,30 +28,61 @@
     systemd.services.dbus-broker.serviceConfig.LimitNOFILE = 65536;
 
     boot.supportedFilesystems = [ "btrfs" ];
-    fileSystems."/" = {
-      device = "/dev/disk/by-label/ROOT";
-      fsType = "btrfs";
-    };
-
-    nix = {
-      settings = {
-        experimental-features = [
-          "nix-command"
-          "flakes"
+    fileSystems = {
+      "/" = {
+        label = "ROOT";
+        fsType = "btrfs";
+        options = [
+          "lazytime"
+          "noatime"
+          "compress-force=zstd:1"
+          "subvol=root"
         ];
-        flake-registry = "";
-        accept-flake-config = true;
       };
-      optimise.automatic = true;
-      channel.enable = false;
-
-      gc = {
-        automatic = true;
-        dates = "daily";
-        randomizedDelaySec = "24h";
-        options = "--delete-old";
+      "/nix" = {
+        label = "ROOT";
+        fsType = "btrfs";
+        options = [
+          "lazytime"
+          "noatime"
+          "compress-force=zstd:1"
+          "subvol=nix"
+        ];
       };
     };
+
+    services.btrfs.autoScrub = {
+      enable = true;
+      fileSystems = [ "/" ];
+    };
+
+    nix =
+      let
+        flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
+      in
+      {
+        settings = {
+          experimental-features = [
+            "nix-command"
+            "flakes"
+          ];
+          flake-registry = "";
+          accept-flake-config = true;
+          nix-path = config.nix.nixPath;
+        };
+        registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
+        nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
+
+        optimise.automatic = true;
+        channel.enable = false;
+
+        gc = {
+          automatic = true;
+          dates = "daily";
+          randomizedDelaySec = "24h";
+          options = "--delete-old";
+        };
+      };
 
     users.mutableUsers = false;
     users.allowNoPasswordLogin = true;

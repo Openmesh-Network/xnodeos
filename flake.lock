@@ -52,22 +52,6 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1764522689,
-        "narHash": "sha256-SqUuBFjhl/kpDiVaKLQBoD8TLD+/cTUzzgVFoaHrkqY=",
-        "owner": "nixos",
-        "repo": "nixpkgs",
-        "rev": "8bb5646e0bed5dbd3ab08c7a7cc15b75ab4e1d0f",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nixos",
-        "ref": "nixos-25.11",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
-    "nixpkgs_3": {
-      "locked": {
         "lastModified": 1758589230,
         "narHash": "sha256-zMTCFGe8aVGTEr2RqUi/QzC1nOIQ0N1HRsbqB4f646k=",
         "owner": "NixOS",
@@ -82,18 +66,18 @@
         "type": "github"
       }
     },
-    "nixpkgs_4": {
+    "nixpkgs_3": {
       "locked": {
-        "lastModified": 1758346548,
-        "narHash": "sha256-afXE7AJ7MY6wY1pg/Y6UPHNYPy5GtUKeBkrZZ/gC71E=",
+        "lastModified": 1764522689,
+        "narHash": "sha256-SqUuBFjhl/kpDiVaKLQBoD8TLD+/cTUzzgVFoaHrkqY=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "b2a3852bd078e68dd2b3dfa8c00c67af1f0a7d20",
+        "rev": "8bb5646e0bed5dbd3ab08c7a7cc15b75ab4e1d0f",
         "type": "github"
       },
       "original": {
         "owner": "nixos",
-        "ref": "nixos-25.05",
+        "ref": "nixos-25.11",
         "repo": "nixpkgs",
         "type": "github"
       }
@@ -102,7 +86,10 @@
       "inputs": {
         "disko": "disko",
         "nixos-facter-modules": "nixos-facter-modules",
-        "nixpkgs": "nixpkgs_2",
+        "nixpkgs": [
+          "xnode-manager",
+          "nixpkgs"
+        ],
         "xnode-auth": "xnode-auth",
         "xnode-manager": "xnode-manager"
       }
@@ -139,7 +126,7 @@
     },
     "xnode-auth": {
       "inputs": {
-        "nixpkgs": "nixpkgs_3",
+        "nixpkgs": "nixpkgs_2",
         "systems": "systems"
       },
       "locked": {
@@ -158,19 +145,20 @@
     },
     "xnode-manager": {
       "inputs": {
-        "nixpkgs": "nixpkgs_4",
+        "nixpkgs": "nixpkgs_3",
         "systems": "systems_2"
       },
       "locked": {
-        "lastModified": 1762204905,
-        "narHash": "sha256-svxx9B3O6b6ILq0TrtabSfSgR6vYGIq1pFNaCm+sA10=",
+        "lastModified": 1764614688,
+        "narHash": "sha256-3uroylYxIyPG9do6LqR91vPOtiYlZjLEWaInQA8bG50=",
         "owner": "Openmesh-Network",
         "repo": "xnode-manager",
-        "rev": "78461bd29a86ec742d2705c86cc72bbdc9c10ad7",
+        "rev": "bacc3a3a42fc4ef8cb99399c3e31065936d19ef2",
         "type": "github"
       },
       "original": {
         "owner": "Openmesh-Network",
+        "ref": "dev",
         "repo": "xnode-manager",
         "type": "github"
       }

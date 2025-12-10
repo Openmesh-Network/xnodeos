@@ -5,7 +5,7 @@
 }:
 {
   imports = [
-    ./os/base.nix
+    (import ./os/base.nix { inherit inputs; })
     (import ./os/hardware.nix { inherit inputs; })
     (import ./os/disks.nix { inherit inputs; })
     ./os/encrypted.nix

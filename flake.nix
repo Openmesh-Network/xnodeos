@@ -5,7 +5,7 @@
     disko.url = "github:nix-community/disko/latest";
     nixos-facter-modules.url = "github:nix-community/nixos-facter-modules";
 
-    xnode-manager.url = "github:Openmesh-Network/xnode-manager";
+    xnode-manager.url = "github:Openmesh-Network/xnode-manager/dev";
     nixpkgs.follows = "xnode-manager/nixpkgs";
 
     xnode-auth.url = "github:Openmesh-Network/xnode-auth";

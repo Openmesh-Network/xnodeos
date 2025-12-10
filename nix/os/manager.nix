@@ -41,7 +41,8 @@ in
       soa.nameserver = if (domain != "") then domain else "manager.xnode.local";
     };
 
-    systemd.services."acme-manager.xnode.local".script = lib.mkForce ''echo "selfsigned only"'';
+    systemd.services."acme-order-renew-manager.xnode.local".script =
+      lib.mkForce ''echo "selfsigned only"'';
     services.xnode-reverse-proxy = {
       enable = true;
       rules = builtins.listToAttrs (

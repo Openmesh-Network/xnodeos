@@ -19,7 +19,7 @@ ENCRYPTED env var is recommended to be set if the hardware supports it, it will 
 INITIAL_CONFIG env var can be set to apply any user configuration to the initial system, such as additional configuration required to access xnode-manager.
 
 ```
-export ENCRYPTED="1" && curl https://raw.githubusercontent.com/Openmesh-Network/xnodeos/main/install.sh | bash 2>&1 | tee /tmp/xnodeos.log
+export ENCRYPTED="1" && curl -L https://opnm.sh/install | bash 2>&1
 ```
 
 ### Cloud Init

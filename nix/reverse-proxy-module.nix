@@ -210,16 +210,14 @@ in
         dnsProvider = "exec";
         environmentFile =
           let
-            dns-dir = "${data}/dns";
+            dns-dir = "/var/lib/xnode-dns/acme";
           in
-          pkgs.writeText "acme-env" "EXEC_PATH=${pkgs.writeScript "dns-update.sh" ''
+          pkgs.writeText "acme-env" "EXEC_PATH=${pkgs.writeScript "acme-dns-update.sh" ''
             mode="$1"
             record="$2"
             token="$3"
 
             if [ "$mode" = "present" ]; then
-              mkdir -p ${dns-dir}
-              setfacl -R -m g:xnode-dns:r ${dns-dir}
                 cat > ${dns-dir}/db.$record << EOL
             $ORIGIN $record
             @ 3600 IN SOA ${config.services.xnode-dns.soa.nameserver}. ${

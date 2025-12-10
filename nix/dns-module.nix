@@ -88,6 +88,7 @@ in
     let
       leases-dir = "/var/lib/systemd/network/dhcp-server-lease";
       dns-dir = "/var/lib/xnode-dns/container";
+      acme-dir = "/var/lib/xnode-dns/acme";
     in
     lib.mkIf cfg.enable {
       users.groups.xnode-dns = { };
@@ -109,7 +110,7 @@ in
         config = ''
           . {
             auto {
-              directory /var/lib/xnode-reverse-proxy/dns
+              directory ${acme-dir}
               reload 10s
             }
             forward . 127.0.0.1:5353
@@ -131,6 +132,21 @@ in
         User = "xnode-dns";
         Group = "xnode-dns";
         DynamicUser = lib.mkForce false;
+      };
+
+      systemd.services.dns-acme-folder = {
+        wantedBy = [ "multi-user.target" ];
+        description = "Create folder for ACME to populate with DNS zones.";
+        serviceConfig = {
+          Restart = "on-failure";
+        };
+        path = [
+          pkgs.acl
+        ];
+        script = ''
+          mkdir -p ${acme-dir}
+          setfacl -R -m g:xnode-reverse-proxy:rw ${acme-dir}
+        '';
       };
 
       systemd.paths.dns-sync-container-leases = {

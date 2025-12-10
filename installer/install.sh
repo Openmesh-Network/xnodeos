@@ -10,35 +10,34 @@ mapfile -t DISKS < <(
     grep -v '^zram' # Exclude zram
 )
 
-# Collect list of disks after formatting and mounting
+# Collect list of disks after formatting
 OUTPUT_DISKS=()
 for i in "${!DISKS[@]}"; do
-  if [[ $ENCRYPTED ]]; then
-    OUTPUT_DISKS+=("/dev/mapper/disk${i}")
-  else
-    if [[ $disk == nvme* || $disk == mmcblk* ]]; then
-      OUTPUT_DISKS+=("/dev/${DISKS[$i]}p3")
-    else
-      OUTPUT_DISKS+=("/dev/${DISKS[$i]}3")
-    fi
-  fi
-  DISK_COUNTER=$((DISK_COUNTER + 1))
+  OUTPUT_DISKS+=("/dev/mapper/disk${i}")
 done
+
 # Save disk configuration
-printf "%s\n" "${DISKS[@]}" > /etc/nixos/xnode-config/disks
+DISKSTR=$(printf "%s\n" "${DISKS[@]}")
+echo -n "$DISKSTR" > /etc/nixos/xnode-config/disks
+
+# Generate disk encryption key
+echo -n "$(tr -dc '[:alnum:]' < /dev/random | head -c64)" > /tmp/secret.key
 
 if [[ $ENCRYPTED ]]; then
-  # Generate disk encryption key
-  echo -n "$(tr -dc '[:alnum:]' < /dev/random | head -c64)" > /tmp/secret.key
-
   # Encrypt disk password for unattended (TPM2) boot decryption (Clevis)
   # Initially do not bind to any pcrs (always allow decryption) for the first boot
   # Set pcrs after first boot (to capture the TPM2 register values of XnodeOS instead of XnodeOS installer)
-  cat /tmp/secret.key | clevis encrypt tpm2 '{"pcr_ids": ""}' > /etc/nixos/xnode-config/clevis.jwe
+  cat /tmp/secret.key | clevis encrypt tpm2 '{"pcr_ids": ""}' > /etc/nixos/xnode-config/encryption-key
+else
+  # Store disk password in plain text
+  cp /tmp/secret.key /etc/nixos/xnode-config/encryption-key
 fi
 
+# Generate Secure Boot Keys
+sbctl create-keys
+
 # Perform hardware scan
-nixos-facter -o /etc/nixos/xnode-config/facter.json
+nixos-facter -o /etc/nixos/xnode-config/hardware
 
 # Download main configuration
 (curl -L "https://raw.githubusercontent.com/Openmesh-Network/xnodeos/main/config/flake.nix")> /etc/nixos/flake.nix
@@ -66,8 +65,8 @@ if [[ $INITIAL_CONFIG ]]; then
   sed -i "/# START USER CONFIG/,/# END USER CONFIG/c\# START USER CONFIG\n${INITIAL_CONFIG}\n# END USER CONFIG" /etc/nixos/flake.nix
 fi
 
-# Apply disk formatting and mount drives
-disko --mode destroy,format,mount --flake /etc/nixos --yes-wipe-all-disks
+# Apply disk partitions and formatting
+disko --mode destroy,format,mount --flake /etc/nixos#xnode --no-deps --yes-wipe-all-disks
 if [[ ${#OUTPUT_DISKS[@]} -gt 1 ]]; then
   # Multiple disks
   BRTFS_MODE="--data single --metadata raid1"
@@ -75,18 +74,25 @@ else
   # Single disk
   BRTFS_MODE="--data single --metadata dup"
 fi
-mkfs.btrfs --label ROOT ${BRTFS_MODE} ${OUTPUT_DISKS[@]}
-mount /dev/disk/by-label/ROOT /mnt
+mkfs.btrfs --force --label ROOT ${BRTFS_MODE} ${OUTPUT_DISKS[@]}
+sleep 1 # /dev/disk/by-label/ROOT isn't available instantly
 
-# Move config to root file system
-mkdir -p /mnt/etc/nixos
-mv /etc/nixos /mnt/etc/nixos
+# Create subvolumes and mount disks 
+mount --mkdir /dev/disk/by-label/ROOT /mnt
+btrfs subvolume create /mnt/root
+btrfs subvolume create /mnt/nix
+umount /mnt
+mount --mkdir -o lazytime,noatime,compress-force=zstd:1,subvol=root /dev/disk/by-label/ROOT /mnt
+mount --mkdir -o lazytime,noatime,compress-force=zstd:1,subvol=nix /dev/disk/by-label/ROOT /mnt/nix
+mount --mkdir -o relatime,umask=0077 /dev/md/BOOT /mnt/boot
 
-if [[ $ENCRYPTED ]]; then
-  # Generate Secure Boot Keys
-  mkdir -p /mnt/var/lib/sbctl/keys
-  sbctl create-keys --export /mnt/var/lib/sbctl/keys --database-path /mnt/var/lib/sbctl
-fi
+# Move config to disk
+mkdir -p /mnt/etc
+mv /etc/nixos /mnt/etc
+
+# Move Secure Boot Keys
+mkdir -p /mnt/var/lib
+mv /var/lib/sbctl /mnt/var/lib
 
 # Build configuration
 nix build /mnt/etc/nixos#nixosConfigurations.xnode.config.system.build.toplevel --store /mnt --profile /mnt/nix/var/nix/profiles/system 
