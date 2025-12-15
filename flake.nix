@@ -2,12 +2,19 @@
   description = "XnodeOS Modules";
 
   inputs = {
-    disko.url = "github:nix-community/disko/latest";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
+
     nixos-facter-modules.url = "github:nix-community/nixos-facter-modules";
+    lanzaboote = {
+      url = "github:nix-community/lanzaboote/v1.0.0";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    disko = {
+      url = "github:nix-community/disko/latest";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     xnode-manager.url = "github:Openmesh-Network/xnode-manager/dev";
-    nixpkgs.follows = "xnode-manager/nixpkgs";
-
     xnode-auth.url = "github:Openmesh-Network/xnode-auth";
   };
 

@@ -2,18 +2,10 @@
 { config, lib, ... }:
 {
   config = {
-    boot.loader.limine = {
-      enable = true;
-      efiSupport = true;
-      efiInstallAsRemovable = true;
-      maxGenerations = 1;
-    };
-
-    boot.loader.timeout = 0; # Speed up boot by skipping selection
     boot.enableContainers = true; # Enable nixos containers
     services.fwupd.enable = true; # Allow applications to update firmware
     zramSwap.enable = true; # Compress memory
-    services.dbus.implementation = "broker"; # high performance and reliability implementation of D-Bus
+    services.dbus.implementation = "broker"; # High performance and reliability implementation of D-Bus
 
     # Default limit easily exhausted
     boot.kernel.sysctl = {
@@ -26,35 +18,6 @@
     };
     systemd.services.nginx.serviceConfig.LimitNOFILE = 65536;
     systemd.services.dbus-broker.serviceConfig.LimitNOFILE = 65536;
-
-    boot.supportedFilesystems = [ "btrfs" ];
-    fileSystems = {
-      "/" = {
-        label = "ROOT";
-        fsType = "btrfs";
-        options = [
-          "lazytime"
-          "noatime"
-          "compress-force=zstd:1"
-          "subvol=root"
-        ];
-      };
-      "/nix" = {
-        label = "ROOT";
-        fsType = "btrfs";
-        options = [
-          "lazytime"
-          "noatime"
-          "compress-force=zstd:1"
-          "subvol=nix"
-        ];
-      };
-    };
-
-    services.btrfs.autoScrub = {
-      enable = true;
-      fileSystems = [ "/" ];
-    };
 
     nix =
       let
@@ -86,40 +49,5 @@
 
     users.mutableUsers = false;
     users.allowNoPasswordLogin = true;
-
-    networking = {
-      hostName = "xnode";
-      useDHCP = false;
-      useNetworkd = true;
-      wireless.iwd = {
-        enable = true;
-      };
-    };
-
-    systemd.network = {
-      enable = true;
-      wait-online = {
-        timeout = 10;
-        anyInterface = true;
-      };
-      networks = {
-        "99-wired" = {
-          matchConfig.Name = "en*";
-          networkConfig = {
-            DHCP = "yes";
-          };
-          dhcpV4Config.RouteMetric = 100;
-          dhcpV6Config.WithoutRA = "solicit";
-        };
-        "99-wireless" = {
-          matchConfig.Name = "wl*";
-          networkConfig = {
-            DHCP = "yes";
-          };
-          dhcpV4Config.RouteMetric = 200;
-          dhcpV6Config.WithoutRA = "solicit";
-        };
-      };
-    };
   };
 }

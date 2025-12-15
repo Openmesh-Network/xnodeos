@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, lib, ... }:
 let
   raw-network-config =
     if (builtins.pathExists "${config.services.xnodeos.xnode-config}/network") then
@@ -30,26 +30,64 @@ let
   }) raw-network-config.address;
 in
 {
-  config = {
-    systemd.network.networks = builtins.listToAttrs (
-      builtins.map (interface: {
-        name = "00-${interface.name}";
-        value = {
-          matchConfig.MACAddress = interface.name;
-          networkConfig = {
-            DHCP = "yes";
-            LLDP = "yes";
-            IPv6AcceptRA = "yes";
-            MulticastDNS = "yes";
-          };
-          address = builtins.map (ip: ip.address) interface.value.ip;
-          routes = builtins.map (route: {
-            Destination = route.destination;
-            Gateway = route.gateway;
-            GatewayOnLink = if (route.onlink) then "yes" else "no";
-          }) interface.value.route;
+  config = lib.mkMerge [
+    {
+      networking = {
+        hostName = "xnode";
+        useDHCP = false;
+        useNetworkd = true;
+        wireless.iwd = {
+          enable = true;
         };
-      }) network-config
-    );
-  };
+      };
+
+      systemd.network = {
+        enable = true;
+        wait-online = {
+          timeout = 10;
+          anyInterface = true;
+        };
+        networks = {
+          "99-wired" = {
+            matchConfig.Name = "en*";
+            networkConfig = {
+              DHCP = "yes";
+            };
+            dhcpV4Config.RouteMetric = 100;
+            dhcpV6Config.WithoutRA = "solicit";
+          };
+          "99-wireless" = {
+            matchConfig.Name = "wl*";
+            networkConfig = {
+              DHCP = "yes";
+            };
+            dhcpV4Config.RouteMetric = 200;
+            dhcpV6Config.WithoutRA = "solicit";
+          };
+        };
+      };
+    }
+    {
+      systemd.network.networks = builtins.listToAttrs (
+        builtins.map (interface: {
+          name = "00-${interface.name}";
+          value = {
+            matchConfig.MACAddress = interface.name;
+            networkConfig = {
+              DHCP = "yes";
+              LLDP = "yes";
+              IPv6AcceptRA = "yes";
+              MulticastDNS = "yes";
+            };
+            address = builtins.map (ip: ip.address) interface.value.ip;
+            routes = builtins.map (route: {
+              Destination = route.destination;
+              Gateway = route.gateway;
+              GatewayOnLink = if (route.onlink) then "yes" else "no";
+            }) interface.value.route;
+          };
+        }) network-config
+      );
+    }
+  ];
 }

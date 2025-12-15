@@ -23,7 +23,9 @@ echo -n "$DISKSTR" > /etc/nixos/xnode-config/disks
 # Generate disk encryption key
 echo -n "$(tr -dc '[:alnum:]' < /dev/random | head -c64)" > /tmp/secret.key
 
-if [[ $ENCRYPTED ]]; then
+# Detect if system contains TPM
+TPM=$(cat /sys/class/tpm/tpm0/tpm_version_major)
+if [[ $TPM == "2" ]]; then
   # Encrypt disk password for unattended (TPM2) boot decryption (Clevis)
   # Initially do not bind to any pcrs (always allow decryption) for the first boot
   # Set pcrs after first boot (to capture the TPM2 register values of XnodeOS instead of XnodeOS installer)
@@ -32,9 +34,14 @@ else
   # Store disk password in plain text
   cp /tmp/secret.key /etc/nixos/xnode-config/encryption-key
 fi
+echo -n "${TPM}" > /etc/nixos/xnode-config/tpm
 
 # Generate Secure Boot Keys
 sbctl create-keys
+
+# Attempt to enroll the Secure Boot Keys
+# This will only work if setup mode was enabled before running the installer
+sbctl enroll-keys || true
 
 # Perform hardware scan
 nixos-facter -o /etc/nixos/xnode-config/hardware
@@ -54,9 +61,6 @@ if [[ $EMAIL ]]; then
 fi
 if [[ $PASSWORD ]]; then
   echo -n "${PASSWORD}" > /etc/nixos/xnode-config/password
-fi
-if [[ $ENCRYPTED ]]; then
-  echo -n "1" > /etc/nixos/xnode-config/encrypted
 fi
 if [[ $NETWORK ]]; then
   echo -n "${NETWORK}" > /etc/nixos/xnode-config/network
@@ -84,7 +88,7 @@ btrfs subvolume create /mnt/nix
 umount /mnt
 mount --mkdir -o lazytime,noatime,compress-force=zstd:1,subvol=root /dev/disk/by-label/ROOT /mnt
 mount --mkdir -o lazytime,noatime,compress-force=zstd:1,subvol=nix /dev/disk/by-label/ROOT /mnt/nix
-mount --mkdir -o relatime,umask=0077 /dev/md/BOOT /mnt/boot
+mount --mkdir -o umask=0077 /dev/md/BOOT /mnt/boot
 
 # Move config to disk
 mkdir -p /mnt/etc

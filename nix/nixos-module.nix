@@ -7,8 +7,8 @@
   imports = [
     (import ./os/base.nix { inherit inputs; })
     (import ./os/hardware.nix { inherit inputs; })
+    (import ./os/boot.nix { inherit inputs; })
     (import ./os/disks.nix { inherit inputs; })
-    ./os/encrypted.nix
     ./os/network.nix
     ./os/state-version.nix
     (import ./os/manager.nix { inherit inputs; })

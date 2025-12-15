@@ -10,7 +10,7 @@ in
   config = lib.mkIf (password != "") {
     # No password disables password authentication entirely
     users.users.xnode = {
-      initialPassword = password;
+      password = password;
       isNormalUser = true;
       extraGroups = [
         "wheel"
