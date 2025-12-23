@@ -28,6 +28,9 @@
       };
 
     boot.loader.timeout = lib.mkForce 0;
+    boot.initrd.systemd.enable = true;
+    environment.etc."pcrlock.d".source = "${pkgs.systemd}/lib/pcrlock.d";
+
     services.resolved.enable = true;
     zramSwap.enable = true;
     services.dbus.implementation = "broker";
@@ -45,28 +48,39 @@
       after = [ "network-online.target" ];
       serviceConfig = {
         Type = "oneshot";
-        User = "root";
-        Group = "root";
         RemainAfterExit = true;
       };
-      path = [
-        pkgs.util-linuxMinimal
-        pkgs.jq
-        pkgs.curl
-        pkgs.nix
-        pkgs.disko
-        pkgs.nixos-facter
-        pkgs.sbctl
-        pkgs.clevis
-        # Disko dependencies
-        pkgs.bash
-        pkgs.gptfdisk
-        pkgs.parted
-        pkgs.dosfstools
-        pkgs.mdadm
-        pkgs.cryptsetup
-        pkgs.btrfs-progs
-      ];
+      path =
+        let
+          # Wrap executable in bin folder to use it in path
+          systemd-pcrlock = pkgs.stdenv.mkDerivation {
+            name = "systemd-pcrlock";
+            buildCommand = ''
+              mkdir -p $out/bin
+              ln -s ${pkgs.systemd}/lib/systemd/systemd-pcrlock $out/bin/systemd-pcrlock
+            '';
+          };
+        in
+        [
+          pkgs.util-linuxMinimal
+          pkgs.jq
+          pkgs.curl
+          pkgs.nix
+          pkgs.disko
+          pkgs.nixos-facter
+          pkgs.sbctl
+          pkgs.systemd
+          systemd-pcrlock
+
+          # Disko dependencies
+          pkgs.bash
+          pkgs.gptfdisk
+          pkgs.parted
+          pkgs.dosfstools
+          pkgs.mdadm
+          pkgs.cryptsetup
+          pkgs.btrfs-progs
+        ];
       script = lib.readFile ./install.sh;
     };
 

@@ -110,15 +110,11 @@ in
       '';
     }
     (lib.mkIf (tpm == "2") {
-      # Decrypt all LUKS devices unattended with Clevis (TPM2)
-      boot.initrd.availableKernelModules = [
-        "tpm_crb"
-        "tpm_tis"
-        "virtio-pci"
-      ];
-      boot.initrd.clevis.enable = true;
-      boot.initrd.clevis.devices = lib.mapAttrs (name: disk: {
-        secretFile = "${config.services.xnodeos.xnode-config}/encryption-key";
+      # Attempt unattended unlock using TPM2
+      boot.initrd.luks.devices = lib.mapAttrs (name: disk: {
+        crypttabExtraOpts = [
+          "tpm2-device=auto"
+        ];
       }) config.disko.devices.disk;
     })
     (lib.mkIf (tpm != "2") {
@@ -129,7 +125,7 @@ in
       }) config.disko.devices.disk;
 
       boot.initrd.secrets."/tmp/secret.key" = builtins.path {
-        path = "${config.services.xnodeos.xnode-config}/encryption-key";
+        path = "${config.services.xnodeos.xnode-config}/disk-key";
       };
     })
   ];

@@ -23,25 +23,16 @@ echo -n "$DISKSTR" > /etc/nixos/xnode-config/disks
 # Generate disk encryption key
 echo -n "$(tr -dc '[:alnum:]' < /dev/random | head -c64)" > /tmp/secret.key
 
-# Detect if system contains TPM
-TPM=$(cat /sys/class/tpm/tpm0/tpm_version_major)
-if [[ $TPM == "2" ]]; then
-  # Encrypt disk password for unattended (TPM2) boot decryption (Clevis)
-  # Initially do not bind to any pcrs (always allow decryption) for the first boot
-  # Set pcrs after first boot (to capture the TPM2 register values of XnodeOS instead of XnodeOS installer)
-  cat /tmp/secret.key | clevis encrypt tpm2 '{"pcr_ids": ""}' > /etc/nixos/xnode-config/encryption-key
-else
-  # Store disk password in plain text
-  cp /tmp/secret.key /etc/nixos/xnode-config/encryption-key
-fi
-echo -n "${TPM}" > /etc/nixos/xnode-config/tpm
-
 # Generate Secure Boot Keys
 sbctl create-keys
 
 # Attempt to enroll the Secure Boot Keys
 # This will only work if setup mode was enabled before running the installer
 sbctl enroll-keys || true
+
+# Detect if system contains TPM
+TPM=$(cat /sys/class/tpm/tpm0/tpm_version_major)
+echo -n "${TPM}" > /etc/nixos/xnode-config/tpm
 
 # Perform hardware scan
 nixos-facter -o /etc/nixos/xnode-config/hardware
@@ -90,13 +81,32 @@ mount --mkdir -o lazytime,noatime,compress-force=zstd:1,subvol=root /dev/disk/by
 mount --mkdir -o lazytime,noatime,compress-force=zstd:1,subvol=nix /dev/disk/by-label/ROOT /mnt/nix
 mount --mkdir -o umask=0077 /dev/md/BOOT /mnt/boot
 
+if [[ $TPM == "2" ]]; then
+  # Define policy of allowed TPM2 values
+  systemd-pcrlock lock-secureboot-policy
+  systemd-pcrlock lock-secureboot-authority
+  systemd-pcrlock make-policy --pcr=7
+
+  for i in "${!DISKS[@]}"; do
+    # Setup unattended TPM2 boot decryption and remove password decryption
+    systemd-cryptenroll --wipe-slot="all" --tpm2-device="auto" --unlock-key-file="/tmp/secret.key" "/dev/disk/by-partlabel/disk-disk${i}-LUKS"
+  done
+else
+  # Store disk decryption key in plain text
+  cp /tmp/secret.key /etc/nixos/xnode-config/disk-key
+fi
+
 # Move config to disk
 mkdir -p /mnt/etc
 mv /etc/nixos /mnt/etc
+ln -s /mnt/etc/nixos /etc/nixos
 
-# Move Secure Boot Keys
+# Move state
 mkdir -p /mnt/var/lib
 mv /var/lib/sbctl /mnt/var/lib
+ln -s /mnt/var/lib/sbctl /var/lib/sbctl
+mv /var/lib/systemd /mnt/var/lib
+ln -s /mnt/var/lib/systemd /var/lib/systemd
 
 # Build configuration
 nix build /mnt/etc/nixos#nixosConfigurations.xnode.config.system.build.toplevel --store /mnt --profile /mnt/nix/var/nix/profiles/system 
