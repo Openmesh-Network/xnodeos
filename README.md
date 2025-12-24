@@ -12,7 +12,7 @@ NixOS installation with custom XnodeOS configuration replacing an existing OS in
 OWNER env var should be set when deploying in a open-port environment to prevent malicious actors from claiming your Xnode before you.
 DOMAIN env var should be set to communicate with xnode-manager over HTTPS without proxy. DOMAIN (can be a subdomain) should have an A record point to this Xnode. EMAIL env var should be set in case you own this domain, it can not be a blacklisted email (e.g. @example.com).
 
-PASSWORD env var can be set to allow password login as user "xnode". However it is recommended to manage your machine through [xnode-manager](https://github.com/Openmesh-Network/xnode-manager) only.
+DEBUG env var can be set to any password that can be used to login as user "xnode". This is for debugging purposes only, it is recommended to manage your machine through [xnode-manager](https://github.com/Openmesh-Network/xnode-manager) only.
 
 INITIAL_CONFIG env var can be set to apply any user configuration to the initial system, such as additional configuration required to access xnode-manager.
 

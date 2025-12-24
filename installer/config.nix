@@ -7,7 +7,14 @@
 }:
 {
   config = {
+    services.getty.greetingLine = ''<<< Welcome to Openmesh XnodeOS Installer ${config.system.nixos.label} (\m) - \l >>>'';
     services.getty.autologinUser = lib.mkForce "root";
+    users.users.root.shell = lib.getExe (
+      pkgs.writeShellScriptBin "install-xnodeos-progress" ''
+        ${config.systemd.package}/bin/journalctl -u install-xnodeos.service -f
+      ''
+    );
+
     nix =
       let
         flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
@@ -27,7 +34,6 @@
         channel.enable = false;
       };
 
-    boot.loader.timeout = lib.mkForce 0;
     boot.initrd.systemd.enable = true;
     environment.etc."pcrlock.d".source = "${pkgs.systemd}/lib/pcrlock.d";
 
@@ -46,9 +52,12 @@
       description = "Install XnodeOS.";
       wants = [ "network-online.target" ];
       after = [ "network-online.target" ];
+      startLimitIntervalSec = 0;
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
+        Restart = "on-failure";
+        RestartSec = 1;
       };
       path =
         let
@@ -57,7 +66,7 @@
             name = "systemd-pcrlock";
             buildCommand = ''
               mkdir -p $out/bin
-              ln -s ${pkgs.systemd}/lib/systemd/systemd-pcrlock $out/bin/systemd-pcrlock
+              ln -s ${config.systemd.package}/lib/systemd/systemd-pcrlock $out/bin/systemd-pcrlock
             '';
           };
         in
@@ -69,7 +78,7 @@
           pkgs.disko
           pkgs.nixos-facter
           pkgs.sbctl
-          pkgs.systemd
+          config.systemd.package
           systemd-pcrlock
 
           # Disko dependencies

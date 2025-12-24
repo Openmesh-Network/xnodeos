@@ -55,30 +55,13 @@
             esp=${config.boot.loader.efi.efiSysMountPoint}
             rm -rf "''${esp:?}/*"
             mkdir -p "$esp/EFI/BOOT"
-            mv "$dir/uki.efi" "$esp/EFI/BOOT/BOOTX64.EFI"
+            mv "$dir/uki.efi" "$esp/EFI/BOOT/BOOT${lib.toUpper config.nixpkgs.hostPlatform.efiArch}.EFI"
             rm -rf "$dir"
 
-            ${config.systemd.package}/lib/systemd/systemd-pcrlock lock-uki "$esp/EFI/BOOT/BOOTX64.EFI" --pcrlock="/var/lib/pcrlock.d/650-uki-new.pcrlock.d/generated.pcrlock"
-            SYSTEMD_ESP_PATH="$esp" ${config.systemd.package}/lib/systemd/systemd-pcrlock make-policy --pcr=7 --pcr=11
+            SYSTEMD_ESP_PATH="$esp" ${config.systemd.package}/lib/systemd/systemd-pcrlock make-policy --pcr=7
           '';
         }
       )}";
-    };
-
-    systemd.services.pcrlock-make-policy = {
-      wantedBy = [ "multi-user.target" ];
-      description = "systemd-pcrlock make-policy";
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-      };
-      script = ''
-        if [ -f "/var/lib/pcrlock.d/650-uki-new.pcrlock.d/generated.pcrlock" ]; then
-          rm -rf "/var/lib/pcrlock.d/650-uki-current.pcrlock.d/"
-          mv "/var/lib/pcrlock.d/650-uki-new.pcrlock.d/" "/var/lib/pcrlock.d/650-uki-current.pcrlock.d/"
-          SYSTEMD_ESP_PATH="${config.boot.loader.efi.efiSysMountPoint}" ${config.systemd.package}/lib/systemd/systemd-pcrlock make-policy --pcr=7 --pcr=11
-        fi
-      '';
     };
 
     systemd.services.fwupd = {

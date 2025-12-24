@@ -2,7 +2,9 @@
   "nodes": {
     "disko": {
       "inputs": {
-        "nixpkgs": "nixpkgs"
+        "nixpkgs": [
+          "nixpkgs"
+        ]
       },
       "locked": {
         "lastModified": 1746728054,
@@ -21,11 +23,11 @@
     },
     "nixos-facter-modules": {
       "locked": {
-        "lastModified": 1764252389,
-        "narHash": "sha256-3bbuneTKZBkYXlm0bE36kUjiDsasoIC1GWBw/UEJ9T4=",
+        "lastModified": 1766499999,
+        "narHash": "sha256-p/Bwo4YjbYNvHjmgj71WgGN8qDyZTzUqNfJJouwQ/As=",
         "owner": "nix-community",
         "repo": "nixos-facter-modules",
-        "rev": "5ea68886d95218646d11d3551a476d458df00778",
+        "rev": "feb4086d1462d8a5bb2adcedb5039fef10b69904",
         "type": "github"
       },
       "original": {
@@ -36,16 +38,16 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1746576598,
-        "narHash": "sha256-FshoQvr6Aor5SnORVvh/ZdJ1Sa2U4ZrIMwKBX5k2wu0=",
+        "lastModified": 1766473571,
+        "narHash": "sha256-5G1NDO2PulBx1RoaA6U1YoUDX0qZslpPxv+n5GX6Qto=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "b3582c75c7f21ce0b429898980eddbbf05c68e55",
+        "rev": "76701a179d3a98b07653e2b0409847499b2a07d3",
         "type": "github"
       },
       "original": {
         "owner": "NixOS",
-        "ref": "nixpkgs-unstable",
+        "ref": "nixos-25.11",
         "repo": "nixpkgs",
         "type": "github"
       }
@@ -86,10 +88,7 @@
       "inputs": {
         "disko": "disko",
         "nixos-facter-modules": "nixos-facter-modules",
-        "nixpkgs": [
-          "xnode-manager",
-          "nixpkgs"
-        ],
+        "nixpkgs": "nixpkgs",
         "xnode-auth": "xnode-auth",
         "xnode-manager": "xnode-manager"
       }

@@ -59,10 +59,6 @@ in
               content = {
                 type = "gpt";
                 partitions = {
-                  BOOT = {
-                    size = "1M";
-                    type = "EF02"; # for MBR
-                  };
                   ESP = {
                     size = "1G";
                     type = "EF00";

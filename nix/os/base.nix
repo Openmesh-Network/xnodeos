@@ -49,5 +49,7 @@
 
     users.mutableUsers = false;
     users.allowNoPasswordLogin = true;
+
+    services.getty.greetingLine = ''<<< Welcome to Openmesh XnodeOS ${config.system.nixos.label} (\m) - \l >>>'';
   };
 }

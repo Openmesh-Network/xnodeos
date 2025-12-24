@@ -50,8 +50,8 @@ fi
 if [[ $EMAIL ]]; then
   echo -n "${EMAIL}" > /etc/nixos/xnode-config/email
 fi
-if [[ $PASSWORD ]]; then
-  echo -n "${PASSWORD}" > /etc/nixos/xnode-config/password
+if [[ $DEBUG ]]; then
+  echo -n "${DEBUG}" > /etc/nixos/xnode-config/debug
 fi
 if [[ $NETWORK ]]; then
   echo -n "${NETWORK}" > /etc/nixos/xnode-config/network
@@ -84,8 +84,7 @@ mount --mkdir -o umask=0077 /dev/md/BOOT /mnt/boot
 if [[ $TPM == "2" ]]; then
   # Define policy of allowed TPM2 values
   systemd-pcrlock lock-secureboot-policy
-  systemd-pcrlock lock-secureboot-authority
-  systemd-pcrlock make-policy --pcr=7
+  SYSTEMD_ESP_PATH=/mnt/boot systemd-pcrlock make-policy --pcr=7
 
   for i in "${!DISKS[@]}"; do
     # Setup unattended TPM2 boot decryption and remove password decryption
@@ -96,20 +95,19 @@ else
   cp /tmp/secret.key /etc/nixos/xnode-config/disk-key
 fi
 
-# Move config to disk
+# Symlink to disk
 mkdir -p /mnt/etc
-mv /etc/nixos /mnt/etc
-ln -s /mnt/etc/nixos /etc/nixos
-
-# Move state
 mkdir -p /mnt/var/lib
-mv /var/lib/sbctl /mnt/var/lib
-ln -s /mnt/var/lib/sbctl /var/lib/sbctl
-mv /var/lib/systemd /mnt/var/lib
-ln -s /mnt/var/lib/systemd /var/lib/systemd
+
+ln -s /etc/nixos /mnt/etc/nixos
+ln -s /var/lib/sbctl /mnt/var/lib/sbctl
+ln -s /var/lib/systemd /mnt/var/lib/systemd
+
+# Copy over nix store contents
+nix copy --to /mnt /run/current-system --no-check-sigs
 
 # Build configuration
-nix build /mnt/etc/nixos#nixosConfigurations.xnode.config.system.build.toplevel --store /mnt --profile /mnt/nix/var/nix/profiles/system 
+nix build /mnt/etc/nixos#nixosConfigurations.xnode.config.system.build.toplevel --store /mnt --profile /mnt/nix/var/nix/profiles/system
 
 # Apply configuration
 # Based on https://github.com/NixOS/nixpkgs/blob/master/pkgs/by-name/ni/nixos-install/nixos-install.sh and https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/by-name/ni/nixos-enter/nixos-enter.sh
@@ -122,12 +120,22 @@ chroot /mnt /nix/var/nix/profiles/system/sw/bin/bash -c "$(cat << EOL
 set -e
 /nix/var/nix/profiles/system/activate || true
 /nix/var/nix/profiles/system/sw/bin/systemd-tmpfiles --create --remove -E || true
-mount --rbind --mkdir / /mnt
-mount --make-rslave /mnt
+/nix/var/nix/profiles/system/sw/bin/mount --rbind --mkdir / /mnt
+/nix/var/nix/profiles/system/sw/bin/mount --make-rslave /mnt
 NIXOS_INSTALL_BOOTLOADER=1 /nix/var/nix/profiles/system/bin/switch-to-configuration boot
-umount -R /mnt && (rmdir /mnt 2>/dev/null || true)
+/nix/var/nix/profiles/system/sw/bin/umount -R /mnt && (/nix/var/nix/profiles/system/sw/bin/rmdir /mnt 2>/dev/null || true)
 EOL
 )"
+
+# Move symlink content
+rm /mnt/etc/nixos
+rm /mnt/var/lib/sbctl
+rm /mnt/var/lib/systemd
+
+cp /etc/nixos /mnt/etc
+cp /etc/nixos /mnt/etc
+cp /var/lib/sbctl /mnt/var/lib
+cp /var/lib/systemd /mnt/var/lib
 
 # Boot into new OS
 reboot
