@@ -100,19 +100,16 @@ else
   cp /tmp/secret.key /etc/nixos/xnode-config/disk-key
 fi
 
-# Symlink to disk
+# Copy content to disk
 mkdir -p /mnt/etc
 mkdir -p /mnt/var/lib
 
-ln -s /etc/nixos /mnt/etc/nixos
-ln -s /var/lib/sbctl /mnt/var/lib/sbctl
-ln -s /var/lib/systemd /mnt/var/lib/systemd
-
-# Copy over nix store contents
-nix copy --to /mnt /etc/xnodeos-config-cache --no-check-sigs
+cp -r /etc/nixos /mnt/etc
+cp -r /var/lib/sbctl /mnt/var/lib
+cp -r /var/lib/systemd /mnt/var/lib
 
 # Build configuration
-nix build /mnt/etc/nixos#nixosConfigurations.xnode.config.system.build.toplevel --store /mnt --profile /mnt/nix/var/nix/profiles/system --print-build-logs
+nix build /mnt/etc/nixos#nixosConfigurations.xnode.config.system.build.toplevel --store /mnt --profile /mnt/nix/var/nix/profiles/system --extra-substituters auto?trusted=1 --print-build-logs
 
 # Apply configuration
 # Based on https://github.com/NixOS/nixpkgs/blob/master/pkgs/by-name/ni/nixos-install/nixos-install.sh and https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/by-name/ni/nixos-enter/nixos-enter.sh
@@ -131,16 +128,6 @@ NIXOS_INSTALL_BOOTLOADER=1 /nix/var/nix/profiles/system/bin/switch-to-configurat
 /nix/var/nix/profiles/system/sw/bin/umount -R /mnt && (/nix/var/nix/profiles/system/sw/bin/rmdir /mnt 2>/dev/null || true)
 EOL
 )"
-
-# Move symlink content
-rm /mnt/etc/nixos
-rm /mnt/var/lib/sbctl
-rm /mnt/var/lib/systemd
-
-cp /etc/nixos /mnt/etc
-cp /etc/nixos /mnt/etc
-cp /var/lib/sbctl /mnt/var/lib
-cp /var/lib/systemd /mnt/var/lib
 
 # Boot into new OS
 reboot

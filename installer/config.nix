@@ -75,7 +75,7 @@
           };
         in
         [
-          pkgs.util-linuxMinimal
+          pkgs.util-linux
           pkgs.jq
           pkgs.curl
           pkgs.nix
@@ -86,11 +86,26 @@
           systemd-pcrlock
 
           # Disko dependencies
+
+          # destroy
+          # pkgs.util-linux
+          pkgs.e2fsprogs
+          pkgs.mdadm
+          pkgs.zfs
+          pkgs.lvm2
           pkgs.bash
+          # pkgs.jq
+          pkgs.gnused
+          pkgs.gawk
+          pkgs.coreutils-full
+
+          # create
+          pkgs.gnugrep
+          # pkgs.bash
           pkgs.gptfdisk
           pkgs.parted
           pkgs.dosfstools
-          pkgs.mdadm
+          # pkgs.mdadm
           pkgs.cryptsetup
           pkgs.btrfs-progs
         ];
