@@ -42,7 +42,7 @@
 
         NETWORK_CONFIG=$(echo "{ \"address\": $(./ip --json address show), \"route\":  $(./ip --json route show) }" | sed 's/"/\\"/g')
         cat << EOF > ./xnode-config/env
-        export OWNER="''${OWNER}" && export DOMAIN="''${DOMAIN}" && export EMAIL="''${EMAIL}" && export DEBUG="''${DEBUG}" && export ENCRYPTED="''${ENCRYPTED}" && export NETWORK="''${NETWORK}" && export INITIAL_CONFIG="''${INITIAL_CONFIG}"
+        export OWNER="''${OWNER}" && export DOMAIN="''${DOMAIN}" && export EMAIL="''${EMAIL}" && export DEBUG="''${DEBUG}" && export VERSION="''${VERSION}" && export NETWORK="''${NETWORK}" && export INITIAL_CONFIG="''${INITIAL_CONFIG}"
         EOF
 
         cp ./initrd-base ./initrd

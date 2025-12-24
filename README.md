@@ -16,6 +16,8 @@ DEBUG env var can be set to any password that can be used to login as user "xnod
 
 INITIAL_CONFIG env var can be set to apply any user configuration to the initial system, such as additional configuration required to access xnode-manager.
 
+VERSION env var can be set to use a specific version installer instead of latest.
+
 The installer will fully encrypt all writable non-removable drives (with unattended TPM2 decryption on boot, if TPM2 is detected). For Secure Boot keys to be automatically enrolled, Secure Boot should be enabled and the system should be booted into setup mode before running the installer. This protects against malicious actors with physical access to your Xnode.
 
 The kexec installer will attempt to copy the statically configured networking configuration of the currently running operating system, but might not work for more exotic setups. Network configuration through DHCP is recommended.

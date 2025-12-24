@@ -37,8 +37,13 @@ echo -n "${TPM}" > /etc/nixos/xnode-config/tpm
 # Perform hardware scan
 nixos-facter -o /etc/nixos/xnode-config/hardware
 
-# Download main configuration
-(curl -L "https://raw.githubusercontent.com/Openmesh-Network/xnodeos/main/config/flake.nix")> /etc/nixos/flake.nix
+# Set main configuration
+cp /etc/xnodeos-config-file /etc/nixos/flake.nix
+cp /etc/xnodeos-config-lock /etc/nixos/flake.lock
+if [[ $VERSION == "latest" ]]; then
+  # Remove version lock
+  sed -i -e "s|\"github:Openmesh-Network/xnodeos/[^\"]*\"|\"github:Openmesh-Network/xnodeos\"|g" ./config/flake.nix
+fi
 
 # Apply environmental variable configuration
 if [[ $OWNER ]]; then
@@ -104,10 +109,10 @@ ln -s /var/lib/sbctl /mnt/var/lib/sbctl
 ln -s /var/lib/systemd /mnt/var/lib/systemd
 
 # Copy over nix store contents
-nix copy --to /mnt /run/current-system --no-check-sigs
+nix copy --to /mnt /etc/xnodeos-config-cache --no-check-sigs
 
 # Build configuration
-nix build /mnt/etc/nixos#nixosConfigurations.xnode.config.system.build.toplevel --store /mnt --profile /mnt/nix/var/nix/profiles/system
+nix build /mnt/etc/nixos#nixosConfigurations.xnode.config.system.build.toplevel --store /mnt --profile /mnt/nix/var/nix/profiles/system --print-build-logs
 
 # Apply configuration
 # Based on https://github.com/NixOS/nixpkgs/blob/master/pkgs/by-name/ni/nixos-install/nixos-install.sh and https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/by-name/ni/nixos-enter/nixos-enter.sh

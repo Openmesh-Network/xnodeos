@@ -1,11 +1,14 @@
 name: Installer
 
-# git tag -f installer
-# git push origin installer -f
+# git tag vx.x.x
+# git push origin vx.x.x
 on:
   push:
     tags:
-      - "installer"
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+env:
+  BRANCH_NAME: ${{ github.ref_name }}
 
 jobs:
   build-and-upload:
@@ -28,18 +31,26 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixos-25.11
 
+      - name: Use config from branch
+        run: sed -i -e "s|\"github:Openmesh-Network/xnodeos\"|\"github:Openmesh-Network/xnodeos/${BRANCH_NAME}\"|g" ./config/flake.nix
+
+      - name: Build config
+        run: nix build ./config#nixosConfigurations.xnode.config.system.build.toplevel --accept-flake-config
+
       - name: Build kexec installer
-        run: nix build --accept-flake-config ./installer#kexec
+        run: nix build ./installer#kexec --accept-flake-config
 
       - name: Add kexec installer to release
         uses: softprops/action-gh-release@v2
         with:
+          make_latest: false
           files: ./result/xnodeos-kexec-installer-*.tar.gz
 
       # - name: Build iso installer
-      #   run: nix build --accept-flake-config ./installer#iso
+      #   run: nix build ./installer#iso --accept-flake-config
 
       # - name: Add iso installer to release
       #   uses: softprops/action-gh-release@v2
       #   with:
+      #     make_latest: false
       #     files: ./result/iso/xnodeos-iso-installer-*.iso

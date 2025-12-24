@@ -2,12 +2,17 @@
   description = "XnodeOS Installer";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
+    config.url = "path:../config";
+    nixpkgs.follows = "config/nixpkgs";
   };
 
   nixConfig = {
-    extra-substituters = [ "https://nix-community.cachix.org" ];
+    extra-substituters = [
+      "https://openmesh.cachix.org"
+      "https://nix-community.cachix.org"
+    ];
     extra-trusted-public-keys = [
+      "openmesh.cachix.org-1:du4NDeMWxcX8T5GddfuD0s/Tosl3+6b+T2+CLKHgXvQ="
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
     ];
   };

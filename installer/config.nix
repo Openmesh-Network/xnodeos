@@ -36,6 +36,10 @@
 
     boot.initrd.systemd.enable = true;
     environment.etc."pcrlock.d".source = "${pkgs.systemd}/lib/pcrlock.d";
+    environment.etc."xnodeos-config-cache".source =
+      inputs.config.nixosConfigurations.xnode.config.system.build.toplevel;
+    environment.etc."xnodeos-config-file".text = builtins.readFile ../config/flake.nix;
+    environment.etc."xnodeos-config-lock".text = builtins.readFile ../config/flake.lock;
 
     services.resolved.enable = true;
     zramSwap.enable = true;
@@ -57,7 +61,7 @@
         Type = "oneshot";
         RemainAfterExit = true;
         Restart = "on-failure";
-        RestartSec = 1;
+        RestartSec = 10;
       };
       path =
         let
