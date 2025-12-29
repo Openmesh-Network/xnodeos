@@ -108,6 +108,22 @@
           # pkgs.mdadm
           pkgs.cryptsetup
           pkgs.btrfs-progs
+
+          # other
+          pkgs.dieHook
+          pkgs.file
+          pkgs.gcc
+          pkgs.libgcc
+          pkgs.gmp
+          pkgs.gnu-config
+          pkgs.gnumake
+          pkgs.isl
+          pkgs.libmpc
+          pkgs.makeBinaryWrapper
+          pkgs.mpfr
+          pkgs.patchelf
+          pkgs.stdenv
+          pkgs.updateAutotoolsGnuConfigScriptsHook
         ];
       script = lib.readFile ./install.sh;
     };

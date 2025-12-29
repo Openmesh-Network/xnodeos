@@ -57,6 +57,7 @@ in
                 --linux="$kernel" \
                 --initrd="$initrd" \
                 --cmdline="init=$init $kernelParams" \
+                --os-release @${config.environment.etc."os-release".source} \
                 --output="$dir/uki.efi"
             ''
             ''
