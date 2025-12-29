@@ -14,8 +14,6 @@ let
 in
 {
   config = {
-    boot.loader.supportsInitrdSecrets = true;
-
     boot.initrd.systemd.enable = true;
     boot.initrd.systemd.additionalUpstreamUnits = [ "systemd-pcrphase-initrd.service" ];
     boot.initrd.systemd.targets.initrd.wants = [ "systemd-pcrphase-initrd.service" ];
