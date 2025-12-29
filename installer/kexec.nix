@@ -40,7 +40,7 @@
 
         ./mkdir -p ./xnode-config
 
-        NETWORK_CONFIG=$(echo "{ \"address\": $(./ip --json address show), \"route\":  $(./ip --json route show) }" | sed 's/"/\\"/g')
+        NETWORK=$(echo "{ \"address\": $(./ip --json address show), \"route\":  $(./ip --json route show) }" | sed 's/"/\\"/g')
         cat << EOF > ./xnode-config/env
         export OWNER="''${OWNER}" && export DOMAIN="''${DOMAIN}" && export EMAIL="''${EMAIL}" && export DEBUG="''${DEBUG}" && export VERSION="''${VERSION}" && export NETWORK="''${NETWORK}" && export INITIAL_CONFIG="''${INITIAL_CONFIG}"
         EOF
@@ -87,11 +87,10 @@
       before = [ "network-pre.target" ];
       serviceConfig = {
         Type = "oneshot";
-        User = "root";
-        Group = "root";
         RemainAfterExit = true;
       };
       path = [
+        pkgs.util-linux
         pkgs.iproute2
         pkgs.jq
       ];
@@ -99,7 +98,8 @@
         # Extract environmental variables
         source /xnode-config/env
 
-        output="/etc/systemd/network"
+        output="/run/systemd/network"
+        mkdir -p "$output"
         if [[ $NETWORK ]]; then
           interfaces=$(echo "$NETWORK" | jq -c '.address.[]')
           routes=$(echo "$NETWORK" | jq -c '.route.[]')

@@ -31,8 +31,7 @@ sbctl create-keys
 sbctl enroll-keys || true
 
 # Detect if system contains TPM
-TPM=$(cat /sys/class/tpm/tpm0/tpm_version_major)
-echo -n "${TPM}" > /etc/nixos/xnode-config/tpm
+TPM=$(cat /sys/class/tpm/tpm0/tpm_version_major) || TPM=""
 
 # Perform hardware scan
 nixos-facter -o /etc/nixos/xnode-config/hardware
@@ -46,6 +45,9 @@ if [[ $VERSION == "latest" ]]; then
 fi
 
 # Apply environmental variable configuration
+if [[ $TPM ]]; then
+  echo -n "${TPM}" > /etc/nixos/xnode-config/tpm
+fi
 if [[ $OWNER ]]; then
   echo -n "${OWNER}" > /etc/nixos/xnode-config/owner
 fi
