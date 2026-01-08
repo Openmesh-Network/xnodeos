@@ -33,6 +33,9 @@ sbctl enroll-keys || true
 # Detect if system contains TPM
 TPM=$(cat /sys/class/tpm/tpm0/tpm_version_major) || TPM=""
 
+# Detect if system is booted into UEFI or Legacy
+[ -d /sys/firmware/efi ] && BOOT="UEFI" || BOOT="BIOS"
+
 # Perform hardware scan
 nixos-facter -o /etc/nixos/xnode-config/hardware
 
@@ -41,12 +44,15 @@ cp /etc/xnodeos-config-file /etc/nixos/flake.nix
 cp /etc/xnodeos-config-lock /etc/nixos/flake.lock
 if [[ $VERSION == "latest" ]]; then
   # Remove version lock
-  sed -i -e "s|\"github:Openmesh-Network/xnodeos/[^\"]*\"|\"github:Openmesh-Network/xnodeos\"|g" ./config/flake.nix
+  sed -i -e "s|\"github:Openmesh-Network/xnodeos/[^\"]*\"|\"github:Openmesh-Network/xnodeos\"|g" /etc/nixos/flake.nix
 fi
 
 # Apply environmental variable configuration
 if [[ $TPM ]]; then
   echo -n "${TPM}" > /etc/nixos/xnode-config/tpm
+fi
+if [[ $BOOT ]]; then
+  echo -n "${BOOT}" > /etc/nixos/xnode-config/boot
 fi
 if [[ $OWNER ]]; then
   echo -n "${OWNER}" > /etc/nixos/xnode-config/owner
@@ -83,10 +89,15 @@ sleep 1 # /dev/disk/by-label/ROOT isn't available instantly
 mount --mkdir /dev/disk/by-label/ROOT /mnt
 btrfs subvolume create /mnt/root
 btrfs subvolume create /mnt/nix
+btrfs subvolume create /mnt/boot
 umount /mnt
 mount --mkdir -o lazytime,noatime,compress-force=zstd:1,subvol=root /dev/disk/by-label/ROOT /mnt
 mount --mkdir -o lazytime,noatime,compress-force=zstd:1,subvol=nix /dev/disk/by-label/ROOT /mnt/nix
-mount --mkdir -o umask=0077 /dev/md/BOOT /mnt/boot
+mount --mkdir -o lazytime,noatime,compress-force=zstd:1,subvol=boot /dev/disk/by-label/ROOT /mnt/boot
+for i in "${!DISKS[@]}"; do
+  mount --mkdir -o umask=0077 "/dev/disk/by-partlabel/disk-disk${i}-ESP" "/mnt/boot${i}"
+done
+systemctl restart esp-sync.path
 
 if [[ $TPM == "2" ]]; then
   # Define policy of allowed TPM2 values
@@ -132,4 +143,6 @@ EOL
 )"
 
 # Boot into new OS
-reboot
+if [ -z "$DEBUG" ]; then
+  reboot
+fi

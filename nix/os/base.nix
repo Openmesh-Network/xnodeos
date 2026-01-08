@@ -1,13 +1,21 @@
 { inputs }:
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 {
   config = {
     boot.enableContainers = true; # Enable nixos containers
-    services.fwupd.enable = true; # Allow applications to update firmware
+    users.mutableUsers = false; # Prevent non-declarative users
+    users.allowNoPasswordLogin = true; # Allow a system without any users that can be logged into
+    services.getty.greetingLine = ''<<< Welcome to Openmesh XnodeOS ${config.system.nixos.label} (\m) - \l >>>''; # Change greeting to specify XnodeOS
     zramSwap.enable = true; # Compress memory
+    services.fwupd.enable = true; # Allow applications to update firmware
     services.dbus.implementation = "broker"; # High performance and reliability implementation of D-Bus
 
-    # Default limit easily exhausted
+    # Update limits
     boot.kernel.sysctl = {
       "fs.inotify.max_user_instances" = 2147483647;
       "net.core.rmem_max" = 16777216;
@@ -19,6 +27,7 @@
     systemd.services.nginx.serviceConfig.LimitNOFILE = 65536;
     systemd.services.dbus-broker.serviceConfig.LimitNOFILE = 65536;
 
+    # Nix config
     nix =
       let
         flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
@@ -46,10 +55,5 @@
           options = "--delete-old";
         };
       };
-
-    users.mutableUsers = false;
-    users.allowNoPasswordLogin = true;
-
-    services.getty.greetingLine = ''<<< Welcome to Openmesh XnodeOS ${config.system.nixos.label} (\m) - \l >>>'';
   };
 }

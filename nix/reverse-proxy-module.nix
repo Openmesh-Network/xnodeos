@@ -303,7 +303,7 @@ in
                   # Use existing acme if defined for this domain, otherwise generate it using enableACME
                   (
                     let
-                      wildcard = builtins.replaceStrings [ builtins.head (builtins.split "." domain) ] [ "*" ] (domain);
+                      wildcard = builtins.replaceStrings [ builtins.head (lib.splitString "." domain) ] [ "*" ] (domain);
                       acme-wildcard = builtins.filter (cert: cert.value.domain == wildcard) (
                         lib.attrsets.attrsToList cfg.certificates
                       );

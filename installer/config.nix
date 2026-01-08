@@ -9,11 +9,6 @@
   config = {
     services.getty.greetingLine = ''<<< Welcome to Openmesh XnodeOS Installer ${config.system.nixos.label} (\m) - \l >>>'';
     services.getty.autologinUser = lib.mkForce "root";
-    users.users.root.shell = lib.getExe (
-      pkgs.writeShellScriptBin "install-xnodeos-progress" ''
-        ${config.systemd.package}/bin/journalctl -u install-xnodeos.service -f
-      ''
-    );
 
     nix =
       let
@@ -35,7 +30,7 @@
       };
 
     boot.initrd.systemd.enable = true;
-    environment.etc."pcrlock.d".source = "${pkgs.systemd}/lib/pcrlock.d";
+    environment.etc."pcrlock.d".source = "${config.systemd.package}/lib/pcrlock.d";
     environment.etc."xnodeos-config-cache".source =
       inputs.config.nixosConfigurations.xnode.config.system.build.toplevel;
     environment.etc."xnodeos-config-file".text = builtins.readFile ../config/flake.nix;
@@ -44,12 +39,6 @@
     services.resolved.enable = true;
     zramSwap.enable = true;
     services.dbus.implementation = "broker";
-    boot.swraid = {
-      enable = true;
-      mdadmConf = ''
-        MAILADDR samuel.mens@openmesh.network
-      '';
-    };
 
     systemd.services.install-xnodeos = {
       wantedBy = [ "multi-user.target" ];
@@ -116,11 +105,41 @@
           pkgs.gptfdisk
           pkgs.parted
           pkgs.dosfstools
-          # pkgs.mdadm
           pkgs.cryptsetup
           pkgs.btrfs-progs
         ];
       script = lib.readFile ./install.sh;
+    };
+
+    systemd.paths.esp-sync = {
+      wantedBy = [ "multi-user.target" ];
+      description = "Watch for /mnt/boot changes";
+      pathConfig = {
+        PathModified = "/mnt/boot/";
+      };
+    };
+
+    systemd.services.esp-sync = {
+      description = "Sync /mnt/boot to all ESPs";
+      serviceConfig = {
+        KillMode = "none";
+      };
+      path = [
+        pkgs.util-linux
+        pkgs.rsync
+      ];
+      script = ''
+        for target in /mnt/boot*; do
+          [ "$target" = "/mnt/boot" ] && continue
+
+          if mountpoint -q "$target"; then
+            echo "Syncing /mnt/boot -> $target"
+            rsync -a --delete --inplace /mnt/boot/ "$target/"
+          else
+            echo "Skipping $target (not mounted)"
+          fi
+        done
+      '';
     };
 
     system.stateVersion = config.system.nixos.release;

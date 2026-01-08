@@ -1,12 +1,12 @@
 { inputs }:
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
-  disks = builtins.split "\n" (builtins.readFile "${config.services.xnodeos.xnode-config}/disks");
-  email =
-    if (builtins.pathExists "${config.services.xnodeos.xnode-config}/email") then
-      builtins.readFile "${config.services.xnodeos.xnode-config}/email"
-    else
-      "";
+  disks = lib.splitString "\n" (builtins.readFile "${config.services.xnodeos.xnode-config}/disks");
   tpm =
     if (builtins.pathExists "${config.services.xnodeos.xnode-config}/tpm") then
       builtins.readFile "${config.services.xnodeos.xnode-config}/tpm"
@@ -42,19 +42,25 @@ in
             "subvol=nix"
           ];
         };
+        "/boot" = {
+          label = "ROOT";
+          fsType = "btrfs";
+          options = [
+            "lazytime"
+            "noatime"
+            "compress-force=zstd:1"
+            "subvol=boot"
+          ];
+        };
       };
-
-      services.btrfs.autoScrub = {
-        enable = true;
-        fileSystems = [ "/" ];
-      };
-
+    }
+    {
       disko.devices = {
         disk = builtins.listToAttrs (
-          lib.lists.imap0 (index: value: {
+          lib.lists.imap0 (index: disk: {
             name = "disk${builtins.toString index}";
             value = {
-              device = "/dev/${value}";
+              device = "/dev/${disk}";
               type = "disk";
               content = {
                 type = "gpt";
@@ -63,8 +69,16 @@ in
                     size = "1G";
                     type = "EF00";
                     content = {
-                      type = "mdraid";
-                      name = "BOOT";
+                      type = "filesystem";
+                      format = "vfat";
+                      extraArgs = [
+                        "-n"
+                        "EFI"
+                      ];
+                      mountpoint = "/boot${builtins.toString index}";
+                      mountOptions = [
+                        "umask=0077"
+                      ];
                     };
                   };
                   LUKS = {
@@ -84,26 +98,7 @@ in
             };
           }) disks
         );
-        mdadm = {
-          BOOT = {
-            type = "mdadm";
-            level = 1;
-            metadata = "1.0";
-            content = {
-              type = "filesystem";
-              format = "vfat";
-              mountpoint = "/boot";
-              mountOptions = [
-                "umask=0077"
-              ];
-            };
-          };
-        };
       };
-
-      boot.swraid.mdadmConf = ''
-        MAILADDR ${email}
-      '';
     }
     (lib.mkIf (tpm == "2") {
       # Attempt unattended unlock using TPM2
@@ -124,5 +119,42 @@ in
         path = "${config.services.xnodeos.xnode-config}/disk-key";
       };
     })
+    {
+      services.btrfs.autoScrub = {
+        enable = true;
+        fileSystems = [ "/" ];
+      };
+
+      systemd.paths.esp-sync = {
+        wantedBy = [ "multi-user.target" ];
+        description = "Watch for /boot changes";
+        pathConfig = {
+          PathModified = "/boot/";
+        };
+      };
+
+      systemd.services.esp-sync = {
+        description = "Sync /boot to all ESPs";
+        serviceConfig = {
+          KillMode = "none";
+        };
+        path = [
+          pkgs.util-linux
+          pkgs.rsync
+        ];
+        script = ''
+          for target in /boot*; do
+            [ "$target" = "/boot" ] && continue
+
+            if mountpoint -q "$target"; then
+              echo "Syncing /boot -> $target"
+              rsync -a --delete --inplace /boot/ "$target/" 2>&1 || echo "Syncing to $target failed"
+            else
+              echo "Skipping $target (not mounted)"
+            fi
+          done
+        '';
+      };
+    }
   ];
 }

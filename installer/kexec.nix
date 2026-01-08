@@ -71,6 +71,18 @@
       '';
     };
 
+    users.users.root.shell = lib.getExe (
+      pkgs.writeShellScriptBin "install-xnodeos-shell" ''
+        source /xnode-config/env || true
+
+        if [[ -n "$DEBUG" ]]; then
+          exec ${lib.getExe pkgs.bash}
+        else
+          exec ${config.systemd.package}/bin/journalctl -u install-xnodeos.service -f
+        fi
+      ''
+    );
+
     systemd.services.install-xnodeos.script = lib.mkBefore ''
       # Extract environmental variables
       source /xnode-config/env
