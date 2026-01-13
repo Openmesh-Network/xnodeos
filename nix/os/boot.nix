@@ -143,38 +143,7 @@ in
                 cp $boot2 "$esp/boot"
                 mkdir -p "$esp/EFI"
                 cp -a "$oc/${arch}/EFI/OC" "$esp/EFI/OC"
-                cp -a "$oc/${arch}/EFI/BOOT" "$esp/EFI/BOOT"
-                mv "$tmp/uki.efi" "$esp/EFI/xnodeos.efi"
-                cp "$oc/Docs/Sample.plist" "$esp/EFI/OC/config.plist"
-
-                # Disable Vault
-                sed -i '/<key>Vault<\/key>/,/string>/ s/<string>Secure<\/string>/<string>Optional<\/string>/' "$esp/EFI/OC/config.plist"
-
-                # Disable Secure Boot
-                sed -i '/<key>SecureBootModel<\/key>/,/string>/ s/<string>Default<\/string>/<string>Disabled<\/string>/' "$esp/EFI/OC/config.plist"
-
-                # Relax Scan Policy
-                sed -i '/<key>ScanPolicy<\/key>/,/string>/ s/<integer>17760515<\/integer>/<integer>0<\/integer>/' "$esp/EFI/OC/config.plist"
-
-                # Instantly Boot Into OS
-                sed -i '/<key>ShowPicker<\/key>/,/string>/ s/<true\/>/<false\/>/' "$esp/EFI/OC/config.plist"
-
-                # Remove Default Drivers
-                sed -i '/<key>Drivers<\/key>/,/<\/array>/c\
-                        <key>Drivers</key>\
-                        <array/>' "$esp/EFI/OC/config.plist"
-
-                # Remove Default Entries
-                sed -i '/<key>Entries<\/key>/,/<\/array>/c\
-                        <key>Entries</key>\
-                        <array/>' "$esp/EFI/OC/config.plist"
-
-                # Add XnodeOS Entry
-                sed -i '/<key>BlessOverride<\/key>/,/<array\/>/c\
-                    <key>BlessOverride</key>\
-                    <array>\
-                      <string>\\EFI\\xnodeos.efi</string>\
-                    </array>' "$esp/EFI/OC/config.plist"
+                mv "$tmp/uki.efi" "$esp/EFI/OC/OpenCore.efi"
               '')
 
               # Update unattended disk decryption lock
