@@ -10,8 +10,14 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    xnode-manager.url = "github:Openmesh-Network/xnode-manager/dev";
-    xnode-auth.url = "github:Openmesh-Network/xnode-auth";
+    xnode-manager = {
+      url = "github:Openmesh-Network/xnode-manager/dev";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    xnode-auth = {
+      url = "github:Openmesh-Network/xnode-auth";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   nixConfig = {

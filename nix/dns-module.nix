@@ -16,7 +16,7 @@ in
         domain = lib.mkOption {
           type = lib.types.str;
           default = "container";
-          example = "app";
+          example = "lan";
           description = ''
             TLD to use for container lookup by hostname.
           '';
@@ -86,8 +86,6 @@ in
 
   config =
     let
-      leases-dir = "/var/lib/systemd/network/dhcp-server-lease";
-      dns-dir = "/var/lib/xnode-dns/container";
       acme-dir = "/var/lib/xnode-dns/acme";
     in
     lib.mkIf cfg.enable {
@@ -121,10 +119,7 @@ in
               allow net 127.0.0.1 ::1
               block
             }
-            auto {
-              directory ${dns-dir}
-              reload 10s
-            }
+            forward . 127.0.0.1:5353
           }
         '';
       };
@@ -149,65 +144,6 @@ in
         '';
       };
 
-      systemd.paths.dns-sync-container-leases = {
-        wantedBy = [ "multi-user.target" ];
-        description = "Trigger sync script on lease change.";
-        pathConfig = {
-          PathChanged = leases-dir;
-        };
-      };
-      systemd.services.dns-sync-container-leases = {
-        description = "Sync container DHCP leases with the DNS server.";
-        serviceConfig = {
-          Restart = "on-failure";
-        };
-        path = [
-          pkgs.jq
-        ];
-        script = ''
-          mkdir -p ${dns-dir}
-          setfacl -R -m g:xnode-dns:r ${dns-dir}
-
-          # Function to generate zone file content
-          generate_zone() {
-            local hostname="$1"
-            local ip="$2"
-            cat <<EOF
-          $ORIGIN ''${hostname}.${cfg.container.domain}.
-          @ 3600 IN SOA ${cfg.soa.nameserver}. ${
-            builtins.replaceStrings [ "@" ] [ "." ] cfg.soa.mailbox
-          }. $(date +"%y%d%m%H%M") ${cfg.soa.refresh} ${cfg.soa.retry} ${cfg.soa.expire} ${cfg.soa.minimumTTL}
-          @ 60 IN A ''${ip}
-          EOF
-          }
-
-          # Process each lease file
-          for filepath in ${leases-dir}/*; do
-            # Skip if not a file
-            [ -f "$filepath" ] || continue
-
-            # Try to parse JSON
-            leases=$(jq -c '.Leases[]?' "$filepath" 2>/dev/null)
-            if [ -z "$leases" ]; then
-              echo "Skipping $filepath: invalid JSON or no leases"
-              continue
-            fi
-
-            # Iterate over leases
-            echo "$leases" | while read -r lease; do
-              hostname=$(echo "$lease" | jq -r '.Hostname // empty')
-              ip=$(echo "$lease" | jq -r '.Address | join(".") // empty')
-
-              if [ -n "$hostname" ] && [ -n "$ip" ]; then
-                  out_path="${dns-dir}/db.''${hostname}.${cfg.container.domain}"
-                  generate_zone "$hostname" "$ip" > "$out_path"
-                  echo "Generated zone file: $out_path"
-              fi
-            done
-          done
-        '';
-      };
-
       networking = {
         nameservers = [ "127.0.0.1" ];
         firewall = {
@@ -216,13 +152,16 @@ in
       };
 
       systemd.network.networks = {
-        "80-container-vz" = {
+        "80-container-ve" = {
           matchConfig = {
-            Kind = "bridge";
-            Name = "vz-*";
+            Kind = "veth";
+            Name = "ve-*";
+          };
+          linkConfig = {
+            RequiredForOnline = "no";
           };
           networkConfig = {
-            Address = "0.0.0.0/22"; # Cannot have more than 1024 interfaces linked to bridge (linux kernel limitation), so larger subnet mask doesn't make sense
+            Address = "0.0.0.0/32"; # Single ip address
             LinkLocalAddressing = "no";
             DHCPServer = "yes";
             IPMasquerade = "both";
@@ -231,17 +170,9 @@ in
             IPv6AcceptRA = "no";
             IPv6SendRA = "yes";
           };
-        };
-        "80-container-vb" = {
-          matchConfig = {
-            Kind = "veth";
-            Name = "vb-*";
-          };
-          networkConfig = {
-            "KeepMaster" = "yes";
-            "LinkLocalAddressing" = "no";
-            "LLDP" = "no";
-            "EmitLLDP" = "no";
+          dhcpServerConfig = {
+            PersistLeases = "runtime";
+            LocalLeaseDomain = cfg.container.domain;
           };
         };
       };

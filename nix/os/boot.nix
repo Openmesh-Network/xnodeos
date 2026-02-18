@@ -98,6 +98,7 @@ in
               # Emulate UEFI on BIOS to allow UKI booting
               # https://github.com/NixOS/nixpkgs/issues/124132
               # https://wiki.archlinux.org/title/Clover#chainload_systemd-boot
+              # https://github.com/acidanthera/OpenCorePkg/blob/master/Utilities/LegacyBoot/BootInstallBase.sh
               (lib.optionalString (boot == "BIOS") ''
                 oc=${
                   let
@@ -141,8 +142,7 @@ in
                 done
 
                 cp $boot2 "$esp/boot"
-                mkdir -p "$esp/EFI"
-                cp -a "$oc/${arch}/EFI/OC" "$esp/EFI/OC"
+                mkdir -p "$esp/EFI/OC"
                 mv "$tmp/uki.efi" "$esp/EFI/OC/OpenCore.efi"
               '')
 

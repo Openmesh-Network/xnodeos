@@ -18,5 +18,6 @@ in
     };
 
     boot.initrd.systemd.emergencyAccess = true;
+    users.users.root.password = debug;
   };
 }
