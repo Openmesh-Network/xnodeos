@@ -87,6 +87,8 @@ in
   config =
     let
       acme-dir = "/var/lib/xnode-dns/acme";
+      leases-dir = "/var/lib/systemd/network/dhcp-server-lease";
+      dns-dir = "/var/lib/xnode-dns/container";
     in
     lib.mkIf cfg.enable {
       users.groups.xnode-dns = { };
@@ -119,7 +121,10 @@ in
               allow net 127.0.0.1 ::1
               block
             }
-            forward . 127.0.0.1:5353
+            auto {
+              directory ${dns-dir}
+              reload 10s
+            }
           }
         '';
       };
@@ -170,11 +175,66 @@ in
             IPv6AcceptRA = "no";
             IPv6SendRA = "yes";
           };
-          dhcpServerConfig = {
-            PersistLeases = "runtime";
-            LocalLeaseDomain = cfg.container.domain;
-          };
         };
+      };
+
+      systemd.paths.dns-sync-container-leases = {
+        wantedBy = [ "multi-user.target" ];
+        description = "Trigger sync script on lease change.";
+        pathConfig = {
+          PathChanged = leases-dir;
+        };
+      };
+      systemd.services.dns-sync-container-leases = {
+        description = "Sync container DHCP leases with the DNS server.";
+        serviceConfig = {
+          Restart = "on-failure";
+        };
+        path = [
+          pkgs.jq
+        ];
+        script = ''
+          mkdir -p ${dns-dir}
+          setfacl -R -m g:xnode-dns:r ${dns-dir}
+
+          # Function to generate zone file content
+          generate_zone() {
+            local hostname="$1"
+            local ip="$2"
+            cat <<EOF
+          $ORIGIN ''${hostname}.${cfg.container.domain}.
+          @ 3600 IN SOA ${cfg.soa.nameserver}. ${
+            builtins.replaceStrings [ "@" ] [ "." ] cfg.soa.mailbox
+          }. $(date +"%y%d%m%H%M") ${cfg.soa.refresh} ${cfg.soa.retry} ${cfg.soa.expire} ${cfg.soa.minimumTTL}
+          @ 60 IN A ''${ip}
+          EOF
+          }
+
+          # Process each lease file
+          for filepath in ${leases-dir}/*; do
+            # Skip if not a file
+            [ -f "$filepath" ] || continue
+
+            # Try to parse JSON
+            leases=$(jq -c '.Leases[]?' "$filepath" 2>/dev/null)
+            if [ -z "$leases" ]; then
+              echo "Skipping $filepath: invalid JSON or no leases"
+              continue
+            fi
+
+            # Iterate over leases
+            echo "$leases" | while read -r lease; do
+              hostname=$(echo "$lease" | jq -r '.Hostname // empty')
+              ip=$(echo "$lease" | jq -r '.Address | join(".") // empty')
+
+              if [ -n "$hostname" ] && [ -n "$ip" ]; then
+                  out_path="${dns-dir}/db.''${hostname}.${cfg.container.domain}"
+                  generate_zone "$hostname" "$ip" > "$out_path"
+                  echo "Generated zone file: $out_path"
+              fi
+            done
+          done
+        '';
       };
     };
 }
