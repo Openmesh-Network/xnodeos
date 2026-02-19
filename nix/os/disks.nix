@@ -20,7 +20,6 @@ in
 
   config = lib.mkMerge [
     {
-      boot.supportedFilesystems = [ "btrfs" ];
       fileSystems = {
         "/" = {
           label = "ROOT";

@@ -12,6 +12,7 @@
     ./os/network.nix
     ./os/state-version.nix
     (import ./os/manager.nix { inherit inputs; })
+    ./os/minimal.nix
     ./os/debug.nix
   ];
 

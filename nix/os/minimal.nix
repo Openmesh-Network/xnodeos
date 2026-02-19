@@ -1,0 +1,75 @@
+{ config, lib, ... }:
+let
+  debug =
+    if (builtins.pathExists "${config.services.xnodeos.xnode-config}/debug") then
+      builtins.readFile "${config.services.xnodeos.xnode-config}/debug"
+    else
+      "";
+in
+{
+  config = lib.mkIf (debug == "") {
+    # Reduce closure size (https://github.com/nix-community/nixos-images/blob/main/nix/noninteractive.nix)
+    environment.systemPackages = lib.mkForce [ ];
+    system.extraDependencies = lib.mkForce [ ];
+    boot.supportedFilesystems = lib.mkForce [
+      "vfat"
+      "btrfs"
+    ];
+    system.disableInstallerTools = lib.mkDefault true;
+    programs.nano.enable = lib.mkDefault false;
+    security.sudo.enable = lib.mkDefault false;
+
+    # https://github.com/NixOS/nixpkgs/blob/master/nixos/modules/profiles/minimal.nix
+    documentation = {
+      enable = lib.mkDefault false;
+      doc.enable = lib.mkDefault false;
+      info.enable = lib.mkDefault false;
+      man.enable = lib.mkDefault false;
+      nixos.enable = lib.mkDefault false;
+    };
+
+    environment = {
+      # Perl is a default package.
+      defaultPackages = lib.mkDefault [ ];
+      stub-ld.enable = lib.mkDefault false;
+    };
+
+    programs = {
+      command-not-found.enable = lib.mkDefault false;
+      fish.generateCompletions = lib.mkDefault false;
+    };
+
+    services = {
+      logrotate.enable = lib.mkDefault false;
+      udisks2.enable = lib.mkDefault false;
+    };
+
+    xdg = {
+      autostart.enable = lib.mkDefault false;
+      icons.enable = lib.mkDefault false;
+      mime.enable = lib.mkDefault false;
+      sounds.enable = lib.mkDefault false;
+    };
+
+    # https://github.com/NixOS/nixpkgs/blob/master/nixos/modules/profiles/headless.nix
+    # Don't start a tty on the serial consoles.
+    systemd.services."serial-getty@ttyS0".enable = lib.mkDefault false;
+    systemd.services."serial-getty@hvc0".enable = false;
+    systemd.services."getty@tty1".enable = false;
+    systemd.services."autovt@".enable = false;
+
+    # Since we can't manually respond to a panic, just reboot.
+    boot.kernelParams = [
+      "panic=1"
+      "boot.panic_on_fail"
+      "vga=0x317"
+      "nomodeset"
+    ];
+
+    # Don't allow emergency mode, because we don't have a console.
+    systemd.enableEmergencyMode = false;
+
+    # Being headless, we don't need a GRUB splash image.
+    boot.loader.grub.splashImage = null;
+  };
+}

@@ -15,7 +15,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     xnode-auth = {
-      url = "github:Openmesh-Network/xnode-auth";
+      url = "github:Openmesh-Network/xnode-auth/cache";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };

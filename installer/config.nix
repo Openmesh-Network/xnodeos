@@ -145,20 +145,41 @@
     system.stateVersion = config.system.nixos.release;
 
     # Reduce closure size (https://github.com/nix-community/nixos-images/blob/main/nix/noninteractive.nix)
-    environment.defaultPackages = lib.mkForce [ ];
     system.extraDependencies = lib.mkForce [ ];
-
-    # Disable unused nixos tools
     system.disableInstallerTools = true;
-
-    # Disable documentation
-    documentation.enable = false;
-    documentation.man.enable = false;
-    documentation.nixos.enable = false;
-    documentation.doc.enable = false;
-
-    # Disable unused programs
     programs.nano.enable = false;
     security.sudo.enable = false;
+
+    # https://github.com/NixOS/nixpkgs/blob/master/nixos/modules/profiles/minimal.nix
+    documentation = {
+      enable = lib.mkDefault false;
+      doc.enable = lib.mkDefault false;
+      info.enable = lib.mkDefault false;
+      man.enable = lib.mkDefault false;
+      nixos.enable = lib.mkDefault false;
+    };
+
+    environment = {
+      # Perl is a default package.
+      defaultPackages = lib.mkDefault [ ];
+      stub-ld.enable = lib.mkDefault false;
+    };
+
+    programs = {
+      command-not-found.enable = lib.mkDefault false;
+      fish.generateCompletions = lib.mkDefault false;
+    };
+
+    services = {
+      logrotate.enable = lib.mkDefault false;
+      udisks2.enable = lib.mkDefault false;
+    };
+
+    xdg = {
+      autostart.enable = lib.mkDefault false;
+      icons.enable = lib.mkDefault false;
+      mime.enable = lib.mkDefault false;
+      sounds.enable = lib.mkDefault false;
+    };
   };
 }
