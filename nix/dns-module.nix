@@ -98,6 +98,7 @@ in
         home = "/var/lib/xnode-dns";
         createHome = true;
       };
+
       services.resolved = {
         enable = true;
         extraConfig = ''
@@ -105,6 +106,7 @@ in
           DNSStubListenerExtra=127.0.0.1:5353
         '';
       };
+
       services.coredns = {
         enable = true;
         config = ''
@@ -134,20 +136,9 @@ in
         DynamicUser = lib.mkForce false;
       };
 
-      systemd.services.dns-acme-folder = {
-        wantedBy = [ "multi-user.target" ];
-        description = "Create folder for ACME to populate with DNS zones.";
-        serviceConfig = {
-          Restart = "on-failure";
-        };
-        path = [
-          pkgs.acl
-        ];
-        script = ''
-          mkdir -p ${acme-dir}
-          setfacl -R -m g:xnode-reverse-proxy:rw ${acme-dir}
-        '';
-      };
+      systemd.tmpfiles.rules = [
+        "A ${acme-dir} - - - - g:xnode-reverse-proxy:rw"
+      ];
 
       networking = {
         nameservers = [ "127.0.0.1" ];

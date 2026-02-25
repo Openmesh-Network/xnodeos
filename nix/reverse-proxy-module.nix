@@ -370,7 +370,7 @@ in
                         }
                       ''
                     ]
-                  ) '''' upstreams
+                  ) "" upstreams
                 )
               ])
             )
@@ -383,7 +383,8 @@ in
       systemd.services.cloudflared-login = lib.mkIf (cfg.program.type == "cloudflared") {
         wantedBy = [ "multi-user.target" ];
         description = "Authenticate cloudflared with your account.";
-        after = [ "network.target" ];
+        wants = [ "network-online.target" ];
+        after = [ "network-online.target" ];
         serviceConfig = {
           User = "xnode-reverse-proxy";
           Group = "xnode-reverse-proxy";
@@ -396,6 +397,8 @@ in
 
       systemd.paths.cloudflared-tunnel-xnode-create = lib.mkIf (cfg.program.type == "cloudflared") {
         wantedBy = [ "multi-user.target" ];
+        wants = [ "network-online.target" ];
+        after = [ "network-online.target" ];
         pathConfig = {
           PathChanged = "${data}/.cloudflared/cert.pem";
           Unit = "cloudflared-tunnel-xnode-create.service";
@@ -416,6 +419,8 @@ in
 
       systemd.paths.cloudflared-tunnel-xnode = lib.mkIf (cfg.program.type == "cloudflared") {
         wantedBy = [ "multi-user.target" ];
+        wants = [ "network-online.target" ];
+        after = [ "network-online.target" ];
         pathConfig = {
           PathExists = "${data}/.cloudflared/tunnel.json";
           Unit = "cloudflared-tunnel-xnode.service";
