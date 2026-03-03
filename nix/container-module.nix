@@ -68,12 +68,15 @@ in
       };
       networks = {
         "80-container-host0" = {
-          matchConfig.Name = "host*";
+          matchConfig = {
+            Kind = "veth";
+            Name = "host0";
+          };
           networkConfig = {
             DHCP = "yes";
+            IPv6AcceptRA = "no";
           };
           dhcpV4Config.RouteMetric = 100;
-          dhcpV6Config.WithoutRA = "solicit";
         };
       };
     };

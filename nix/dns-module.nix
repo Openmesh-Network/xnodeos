@@ -157,7 +157,7 @@ in
             RequiredForOnline = "no";
           };
           networkConfig = {
-            Address = "0.0.0.0/32"; # Single ip address
+            Address = "0.0.0.0/29"; # Single ip address
             LinkLocalAddressing = "no";
             DHCPServer = "yes";
             IPMasquerade = "both";

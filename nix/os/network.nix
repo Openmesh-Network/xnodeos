@@ -54,7 +54,7 @@ in
               DHCP = "yes";
             };
             dhcpV4Config.RouteMetric = 100;
-            dhcpV6Config.WithoutRA = "solicit";
+            dhcpV6Config.RouteMetric = 100;
           };
           "99-wireless" = {
             matchConfig.Name = "wl*";
@@ -62,7 +62,7 @@ in
               DHCP = "yes";
             };
             dhcpV4Config.RouteMetric = 200;
-            dhcpV6Config.WithoutRA = "solicit";
+            dhcpV6Config.RouteMetric = 200;
           };
         };
       };
