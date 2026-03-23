@@ -23,11 +23,11 @@
     },
     "nixos-facter-modules": {
       "locked": {
-        "lastModified": 1766558141,
-        "narHash": "sha256-Ud9v49ZPsoDBFuyJSQ2Mpw1ZgAH/aMwUwwzrVoetNus=",
+        "lastModified": 1773858690,
+        "narHash": "sha256-oW0/lC0oRG5H5LaK6Rmh9L1wmkn9TbenM4bXwnIEDKA=",
         "owner": "nix-community",
         "repo": "nixos-facter-modules",
-        "rev": "e796d536e3d83de74267069e179dc620a608ed7d",
+        "rev": "139dcef4dfc97009629c445806f197883351ab4a",
         "type": "github"
       },
       "original": {
@@ -38,15 +38,15 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1771419570,
-        "narHash": "sha256-r+7IQGe6ta9kKOiO67NXIoT+BtzT90cAjxgsQl/mt38=",
-        "rev": "6d41bc27aaf7b6a3ba6b169db3bd5d6159cfaa47",
+        "lastModified": 1774106199,
+        "narHash": "sha256-n6Edjl/GL8HQ5SURLc7yE3qAb1hf+9ues8aNtHZnjTA=",
+        "rev": "6c9a78c09ff4d6c21d0319114873508a6ec01655",
         "type": "tarball",
-        "url": "https://releases.nixos.org/nixos/25.11/nixos-25.11.6220.6d41bc27aaf7/nixexprs.tar.xz"
+        "url": "https://releases.nixos.org/nixos/unstable/nixos-26.05pre967235.6c9a78c09ff4/nixexprs.tar.xz"
       },
       "original": {
         "type": "tarball",
-        "url": "https://channels.nixos.org/nixos-25.11/nixexprs.tar.xz"
+        "url": "https://channels.nixos.org/nixos-unstable/nixexprs.tar.xz"
       }
     },
     "root": {
@@ -118,16 +118,16 @@
         "systems": "systems_2"
       },
       "locked": {
-        "lastModified": 1764614688,
-        "narHash": "sha256-3uroylYxIyPG9do6LqR91vPOtiYlZjLEWaInQA8bG50=",
+        "lastModified": 1774278588,
+        "narHash": "sha256-2GS9JPFn7xralvbfnbrDAD0ThV2U/yLujnJkBBH4jE0=",
         "owner": "Openmesh-Network",
         "repo": "xnode-manager",
-        "rev": "bacc3a3a42fc4ef8cb99399c3e31065936d19ef2",
+        "rev": "85d5776790b3ff8d7240dfcc3a48b22008204bc1",
         "type": "github"
       },
       "original": {
         "owner": "Openmesh-Network",
-        "ref": "dev",
+        "ref": "WIP",
         "repo": "xnode-manager",
         "type": "github"
       }

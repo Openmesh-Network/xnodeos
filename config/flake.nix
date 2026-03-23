@@ -25,7 +25,7 @@
         modules = [
           inputs.xnodeos.nixosModules.default
           {
-            services.xnodeos.xnode-config = ./xnode-config;
+            xnode.xnode-config = ./xnode-config;
           }
           (
             { pkgs, ... }@args:

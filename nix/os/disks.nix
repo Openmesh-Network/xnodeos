@@ -6,10 +6,11 @@
   ...
 }:
 let
-  disks = lib.splitString "\n" (builtins.readFile "${config.services.xnodeos.xnode-config}/disks");
+  cfg = config.xnode;
+  disks = lib.splitString "\n" (builtins.readFile "${cfg.xnode-config}/disks");
   tpm =
-    if (builtins.pathExists "${config.services.xnodeos.xnode-config}/tpm") then
-      builtins.readFile "${config.services.xnodeos.xnode-config}/tpm"
+    if (builtins.pathExists "${cfg.xnode-config}/tpm") then
+      builtins.readFile "${cfg.xnode-config}/tpm"
     else
       "";
 in
@@ -115,7 +116,7 @@ in
       }) config.disko.devices.disk;
 
       boot.initrd.secrets."/tmp/secret.key" = builtins.path {
-        path = "${config.services.xnodeos.xnode-config}/disk-key";
+        path = "${cfg.xnode-config}/disk-key";
       };
     })
     {

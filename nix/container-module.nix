@@ -5,20 +5,13 @@
   ...
 }:
 let
-  cfg = config.services.xnode-container;
+  cfg = config.xnode;
 in
 {
-  options = {
-    services.xnode-container = {
-      xnode-config = lib.mkOption {
-        type = lib.types.path;
-        example = ./xnode-config;
-        description = ''
-          Folder with configuration files.
-        '';
-      };
-    };
-  };
+  imports = [
+    ./xnode-config.nix
+    (import ./state-version.nix { config-dir = "/config/xnode-config"; })
+  ];
 
   config = {
     boot =
@@ -32,25 +25,6 @@ in
         builtins.readFile "${cfg.xnode-config}/host-platform"
       else
         "x86_64-linux";
-
-    system.stateVersion =
-      if (builtins.pathExists "${cfg.xnode-config}/state-version") then
-        builtins.readFile "${cfg.xnode-config}/state-version"
-      else
-        config.system.nixos.release;
-
-    systemd.services.pin-state-version = {
-      wantedBy = [ "multi-user.target" ];
-      description = "Pin state version to first booted NixOS version.";
-      serviceConfig = {
-        Type = "oneshot";
-      };
-      script = ''
-        if [ ! -f /xnode-config/state-version ]; then
-          echo -n ${config.system.nixos.release} > /xnode-config/state-version
-        fi
-      '';
-    };
 
     networking.hostName = lib.mkIf (builtins.pathExists "${cfg.xnode-config}/hostname") (
       builtins.readFile "${cfg.xnode-config}/hostname"

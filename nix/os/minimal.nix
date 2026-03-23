@@ -1,8 +1,9 @@
 { config, lib, ... }:
 let
+  cfg = config.xnode;
   debug =
-    if (builtins.pathExists "${config.services.xnodeos.xnode-config}/debug") then
-      builtins.readFile "${config.services.xnodeos.xnode-config}/debug"
+    if (builtins.pathExists "${cfg.xnode-config}/debug") then
+      builtins.readFile "${cfg.xnode-config}/debug"
     else
       "";
 in

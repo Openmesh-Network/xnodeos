@@ -7,7 +7,6 @@
 }:
 {
   config = {
-    boot.enableContainers = true; # Enable nixos containers
     users.mutableUsers = false; # Prevent non-declarative users
     users.allowNoPasswordLogin = true; # Allow a system without any users that can be logged into
     services.getty.greetingLine = ''<<< Welcome to Openmesh XnodeOS ${config.system.nixos.label} (\m) - \l >>>''; # Change greeting to specify XnodeOS

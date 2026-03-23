@@ -2,7 +2,7 @@
   description = "XnodeOS Modules";
 
   inputs = {
-    nixpkgs.url = "https://channels.nixos.org/nixos-25.11/nixexprs.tar.xz";
+    nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.xz";
 
     nixos-facter-modules.url = "github:nix-community/nixos-facter-modules";
     disko = {
@@ -11,7 +11,7 @@
     };
 
     xnode-manager = {
-      url = "github:Openmesh-Network/xnode-manager/dev";
+      url = "github:Openmesh-Network/xnode-manager/WIP";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     xnode-auth = {

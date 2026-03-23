@@ -6,14 +6,15 @@
   ...
 }:
 let
+  cfg = config.xnode;
   tpm =
-    if (builtins.pathExists "${config.services.xnodeos.xnode-config}/tpm") then
-      builtins.readFile "${config.services.xnodeos.xnode-config}/tpm"
+    if (builtins.pathExists "${cfg.xnode-config}/tpm") then
+      builtins.readFile "${cfg.xnode-config}/tpm"
     else
       "";
   boot =
-    if (builtins.pathExists "${config.services.xnodeos.xnode-config}/boot") then
-      builtins.readFile "${config.services.xnodeos.xnode-config}/boot"
+    if (builtins.pathExists "${cfg.xnode-config}/boot") then
+      builtins.readFile "${cfg.xnode-config}/boot"
     else
       "";
 in

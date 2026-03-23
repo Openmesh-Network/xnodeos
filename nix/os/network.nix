@@ -1,8 +1,9 @@
 { config, lib, ... }:
 let
+  cfg = config.xnode;
   raw-network-config =
-    if (builtins.pathExists "${config.services.xnodeos.xnode-config}/network") then
-      builtins.fromJSON (builtins.readFile "${config.services.xnodeos.xnode-config}/network")
+    if (builtins.pathExists "${cfg.xnode-config}/network") then
+      builtins.fromJSON (builtins.readFile "${cfg.xnode-config}/network")
     else
       {
         address = [ ];

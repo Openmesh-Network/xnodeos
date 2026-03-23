@@ -1,19 +1,20 @@
 { inputs }:
 { config, lib, ... }:
 let
+  cfg = config.xnode;
   owner =
-    if (builtins.pathExists "${config.services.xnodeos.xnode-config}/owner") then
-      builtins.readFile "${config.services.xnodeos.xnode-config}/owner"
+    if (builtins.pathExists "${cfg.xnode-config}/owner") then
+      builtins.readFile "${cfg.xnode-config}/owner"
     else
       "";
   domain =
-    if (builtins.pathExists "${config.services.xnodeos.xnode-config}/domain") then
-      builtins.readFile "${config.services.xnodeos.xnode-config}/domain"
+    if (builtins.pathExists "${cfg.xnode-config}/domain") then
+      builtins.readFile "${cfg.xnode-config}/domain"
     else
       "";
   email =
-    if (builtins.pathExists "${config.services.xnodeos.xnode-config}/email") then
-      builtins.readFile "${config.services.xnodeos.xnode-config}/email"
+    if (builtins.pathExists "${cfg.xnode-config}/email") then
+      builtins.readFile "${cfg.xnode-config}/email"
     else
       "";
 in

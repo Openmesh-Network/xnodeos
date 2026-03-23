@@ -1,6 +1,5 @@
 # Create empty config folder
-rm -rf /etc/nixos
-mkdir -p /etc/nixos/xnode-config
+mkdir -p /var/lib/xnode-manager/host/config/xnode-config
 
 # Collect all non-removable, writable disks
 DISKS=()
@@ -18,7 +17,7 @@ done
 
 # Save disk configuration
 DISKSTR=$(printf "%s\n" "${DISKS[@]}")
-echo -n "$DISKSTR" > /etc/nixos/xnode-config/disks
+echo -n "$DISKSTR" > /var/lib/xnode-manager/host/config/xnode-config/disks
 
 # Generate disk encryption key
 echo -n "$(tr -dc '[:alnum:]' < /dev/random | head -c64)" > /tmp/secret.key
@@ -37,44 +36,44 @@ TPM=$(cat /sys/class/tpm/tpm0/tpm_version_major) || TPM=""
 [ -d /sys/firmware/efi ] && BOOT="UEFI" || BOOT="BIOS"
 
 # Perform hardware scan
-nixos-facter -o /etc/nixos/xnode-config/hardware
+nixos-facter -o /var/lib/xnode-manager/host/config/xnode-config/hardware
 
 # Set main configuration
-cp /etc/xnodeos-config-file /etc/nixos/flake.nix
-cp /etc/xnodeos-config-lock /etc/nixos/flake.lock
+cp /etc/xnodeos-config-file /var/lib/xnode-manager/host/config/flake.nix
+cp /etc/xnodeos-config-lock /var/lib/xnode-manager/host/config/flake.lock
 if [[ $VERSION == "latest" ]]; then
   # Remove version lock
-  sed -i -e "s|\"github:Openmesh-Network/xnodeos/[^\"]*\"|\"github:Openmesh-Network/xnodeos\"|g" /etc/nixos/flake.nix
+  sed -i -e "s|\"github:Openmesh-Network/xnodeos/[^\"]*\"|\"github:Openmesh-Network/xnodeos\"|g" /var/lib/xnode-manager/host/config/flake.nix
 fi
 
 # Apply environmental variable configuration
 if [[ $TPM ]]; then
-  echo -n "${TPM}" > /etc/nixos/xnode-config/tpm
+  echo -n "${TPM}" > /var/lib/xnode-manager/host/config/xnode-config/tpm
 fi
 if [[ $BOOT ]]; then
-  echo -n "${BOOT}" > /etc/nixos/xnode-config/boot
+  echo -n "${BOOT}" > /var/lib/xnode-manager/host/config/xnode-config/boot
 fi
 if [[ $OWNER ]]; then
-  echo -n "${OWNER}" > /etc/nixos/xnode-config/owner
+  echo -n "${OWNER}" > /var/lib/xnode-manager/host/config/xnode-config/owner
 fi
 if [[ $DOMAIN ]]; then
-  echo -n "${DOMAIN}" > /etc/nixos/xnode-config/domain
+  echo -n "${DOMAIN}" > /var/lib/xnode-manager/host/config/xnode-config/domain
 fi
 if [[ $EMAIL ]]; then
-  echo -n "${EMAIL}" > /etc/nixos/xnode-config/email
+  echo -n "${EMAIL}" > /var/lib/xnode-manager/host/config/xnode-config/email
 fi
 if [[ $DEBUG ]]; then
-  echo -n "${DEBUG}" > /etc/nixos/xnode-config/debug
+  echo -n "${DEBUG}" > /var/lib/xnode-manager/host/config/xnode-config/debug
 fi
 if [[ $NETWORK ]]; then
-  echo -n "${NETWORK}" > /etc/nixos/xnode-config/network
+  echo -n "${NETWORK}" > /var/lib/xnode-manager/host/config/xnode-config/network
 fi
 if [[ $INITIAL_CONFIG ]]; then
-  sed -i "/# START USER CONFIG/,/# END USER CONFIG/c\# START USER CONFIG\n${INITIAL_CONFIG}\n# END USER CONFIG" /etc/nixos/flake.nix
+  sed -i "/# START USER CONFIG/,/# END USER CONFIG/c\# START USER CONFIG\n${INITIAL_CONFIG}\n# END USER CONFIG" /var/lib/xnode-manager/host/config/flake.nix
 fi
 
 # Apply disk partitions and formatting
-disko --mode destroy,format,mount --flake /etc/nixos#xnode --no-deps --yes-wipe-all-disks
+disko --mode destroy,format,mount --flake /var/lib/xnode-manager/host/config#xnode --no-deps --yes-wipe-all-disks
 if [[ ${#OUTPUT_DISKS[@]} -gt 1 ]]; then
   # Multiple disks
   BRTFS_MODE="--data single --metadata raid1"
@@ -110,35 +109,23 @@ if [[ $TPM == "2" ]]; then
   done
 else
   # Store disk decryption key in plain text
-  cp /tmp/secret.key /etc/nixos/xnode-config/disk-key
+  cp /tmp/secret.key /var/lib/xnode-manager/host/config/xnode-config/disk-key
 fi
 
 # Copy content to disk
-mkdir -p /mnt/etc
 mkdir -p /mnt/var/lib
-
-cp -r /etc/nixos /mnt/etc
+cp -r /var/lib/xnode-manager /mnt/var/lib
 cp -r /var/lib/sbctl /mnt/var/lib
 cp -r /var/lib/systemd /mnt/var/lib
 
 # Build configuration
-nix build /mnt/etc/nixos#nixosConfigurations.xnode.config.system.build.toplevel --store /mnt --profile /mnt/nix/var/nix/profiles/system --extra-substituters auto?trusted=1 --print-build-logs
+nix build /mnt/var/lib/xnode-manager/host/config#nixosConfigurations.xnode.config.system.build.toplevel --store /mnt --out-link /mnt/var/lib/xnode-manager/host/result --extra-substituters auto?trusted=1 --print-build-logs
 
 # Apply configuration
-# Based on https://github.com/NixOS/nixpkgs/blob/master/pkgs/by-name/ni/nixos-install/nixos-install.sh and https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/by-name/ni/nixos-enter/nixos-enter.sh
-mkdir -p /mnt/dev /mnt/sys /mnt/proc
-chmod 0755 /mnt/dev /mnt/sys /mnt/proc
-mount --rbind /dev /mnt/dev
-mount --rbind /sys /mnt/sys
-mount --rbind /proc /mnt/proc
-chroot /mnt /nix/var/nix/profiles/system/sw/bin/bash -c "$(cat << EOL
+systemd-run --scope --root-directory /mnt /var/lib/xnode-manager/host/result/sw/bin/bash -c "$(cat << EOL
 set -e
-/nix/var/nix/profiles/system/activate || true
-/nix/var/nix/profiles/system/sw/bin/systemd-tmpfiles --create --remove -E || true
-/nix/var/nix/profiles/system/sw/bin/mount --rbind --mkdir / /mnt
-/nix/var/nix/profiles/system/sw/bin/mount --make-rslave /mnt
-NIXOS_INSTALL_BOOTLOADER=1 /nix/var/nix/profiles/system/bin/switch-to-configuration boot
-/nix/var/nix/profiles/system/sw/bin/umount -R /mnt && (/nix/var/nix/profiles/system/sw/bin/rmdir /mnt 2>/dev/null || true)
+/var/lib/xnode-manager/host/result/activate || true
+NIXOS_INSTALL_BOOTLOADER=1 /var/lib/xnode-manager/host/result/bin/switch-to-configuration boot
 EOL
 )"
 
