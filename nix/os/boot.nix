@@ -59,7 +59,8 @@ in
             lib.concatStrings [
               # Set environment
               ''
-                boot_json=/nix/var/nix/profiles/system/boot.json
+                toplevel="$1"
+                boot_json="$toplevel/boot.json"
                 kernel=$(jq -r '."org.nixos.bootspec.v1".kernel' "$boot_json")
                 initrd=$(jq -r '."org.nixos.bootspec.v1".initrd' "$boot_json")
                 init=$(jq -r '."org.nixos.bootspec.v1".init' "$boot_json")
