@@ -11,9 +11,15 @@ in
   imports = [
     ./xnode-config.nix
     (import ./state-version.nix { config-dir = "/config/xnode-config"; })
+    ./auto-update.nix
   ];
 
   config = {
+    xnode.auto-update = {
+      enable = true;
+      root = "/";
+    };
+
     boot =
       if builtins.hasAttr "isNspawnContainer" options.boot then
         { isNspawnContainer = true; }

@@ -15,5 +15,13 @@
     (import ./os/manager.nix { inherit inputs; })
     ./os/minimal.nix
     ./os/debug.nix
+    ./auto-update.nix
   ];
+
+  config = {
+    xnode.auto-update = {
+      enable = true;
+      root = "/var/lib/xnode-manager/host";
+    };
+  };
 }

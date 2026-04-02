@@ -51,7 +51,6 @@
           automatic = true;
           dates = "daily";
           randomizedDelaySec = "24h";
-          options = "--delete-old";
         };
       };
   };
