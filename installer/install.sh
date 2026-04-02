@@ -125,6 +125,7 @@ nix build /mnt/var/lib/xnode-manager/host/config#nixosConfigurations.xnode.confi
 systemd-run --pipe --root-directory /mnt /var/lib/xnode-manager/host/result/sw/bin/bash -c "$(cat << EOL
 set -e
 /var/lib/xnode-manager/host/result/activate || true
+/var/lib/xnode-manager/host/result/sw/bin/systemd-tmpfiles --create --remove -E || true
 NIXOS_INSTALL_BOOTLOADER=1 /var/lib/xnode-manager/host/result/bin/switch-to-configuration boot
 EOL
 )"
