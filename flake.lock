@@ -96,16 +96,16 @@
         "systems": "systems"
       },
       "locked": {
-        "lastModified": 1774299550,
-        "narHash": "sha256-7tZbbLr3wBZQ9/gHu6D85P4o07FN2vERkM6O9UJanLE=",
+        "lastModified": 1775225981,
+        "narHash": "sha256-9+t7/xjW2XmGwx5E2foWNH7pjvMj190nsgZu+rHM3CU=",
         "owner": "Openmesh-Network",
         "repo": "xnode-auth",
-        "rev": "6e14fd0c05c185cb5ea3f357620099c8a7338d7f",
+        "rev": "e95f1961341c8fc1732e946fbe081edafef93cc2",
         "type": "github"
       },
       "original": {
         "owner": "Openmesh-Network",
-        "ref": "cache",
+        "ref": "dev",
         "repo": "xnode-auth",
         "type": "github"
       }

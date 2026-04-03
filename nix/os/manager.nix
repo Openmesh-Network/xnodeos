@@ -63,7 +63,16 @@ in
           builtins.map (domain: {
             name = domain;
             value = {
-              accessList."${owner}" = { };
+              accessList = {
+                users = {
+                  "${owner}" = {
+                    roles = [ "owner" ];
+                  };
+                };
+                roles = {
+                  "owner" = { };
+                };
+              };
             };
           }) ([ "manager.xnode.local" ] ++ (lib.optionals (domain != "") [ domain ]))
         )
