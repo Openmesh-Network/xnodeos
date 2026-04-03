@@ -76,7 +76,7 @@ in
 
           REBOOT=${if cfg.reboot == "always" then "true" else "false"}
 
-          ${mv} ${cfg.root}/new-result ${cfg.root}/result
+          ${mv} ${cfg.root}/new-result ${cfg.root}/result --no-target-directory
 
           ${cfg.root}/result/bin/switch-to-configuration switch
 
