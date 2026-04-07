@@ -35,7 +35,6 @@ in
       acceptTerms = true;
       defaults.email = if (email != "") then email else "xnode@openmesh.network";
     };
-    security.acme.defaults.extraLegoRenewFlags = [ "--ari-disable" ]; # ARI causes issues currently, re-enable once more stable
 
     services.xnode-dns = {
       enable = true;

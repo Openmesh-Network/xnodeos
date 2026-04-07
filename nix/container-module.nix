@@ -11,6 +11,7 @@ in
   imports = [
     ./xnode-config.nix
     (import ./state-version.nix { config-dir = "/config/xnode-config"; })
+    ./name.nix
     ./auto-update.nix
   ];
 
@@ -31,10 +32,6 @@ in
         builtins.readFile "${cfg.xnode-config}/host-platform"
       else
         "x86_64-linux";
-
-    networking.hostName = lib.mkIf (builtins.pathExists "${cfg.xnode-config}/hostname") (
-      builtins.readFile "${cfg.xnode-config}/hostname"
-    );
 
     networking = {
       useDHCP = false;

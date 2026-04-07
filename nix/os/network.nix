@@ -34,7 +34,6 @@ in
   config = lib.mkMerge [
     {
       networking = {
-        hostName = "xnode";
         useDHCP = false;
         useNetworkd = true;
         wireless.iwd = {
@@ -55,7 +54,7 @@ in
               DHCP = "yes";
             };
             dhcpV4Config.RouteMetric = 100;
-            dhcpV6Config.RouteMetric = 100;
+            ipv6AcceptRAConfig.RouteMetric = 100;
           };
           "99-wireless" = {
             matchConfig.Name = "wl*";
@@ -63,7 +62,7 @@ in
               DHCP = "yes";
             };
             dhcpV4Config.RouteMetric = 200;
-            dhcpV6Config.RouteMetric = 200;
+            ipv6AcceptRAConfig.RouteMetric = 200;
           };
         };
       };

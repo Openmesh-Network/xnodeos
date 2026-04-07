@@ -12,6 +12,7 @@
     (import ./os/disks.nix { inherit inputs; })
     ./os/network.nix
     (import ./state-version.nix { config-dir = "/var/lib/xnode-manager/host/config/xnode-config"; })
+    ./name.nix
     (import ./os/manager.nix { inherit inputs; })
     ./os/minimal.nix
     ./os/debug.nix

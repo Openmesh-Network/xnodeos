@@ -111,37 +111,6 @@
       script = lib.readFile ./install.sh;
     };
 
-    systemd.paths.esp-sync = {
-      wantedBy = [ "multi-user.target" ];
-      description = "Watch for /mnt/boot changes";
-      pathConfig = {
-        PathModified = "/mnt/boot/";
-      };
-    };
-
-    systemd.services.esp-sync = {
-      description = "Sync /mnt/boot to all ESPs";
-      serviceConfig = {
-        KillMode = "none";
-      };
-      path = [
-        pkgs.util-linux
-        pkgs.rsync
-      ];
-      script = ''
-        for target in /mnt/boot*; do
-          [ "$target" = "/mnt/boot" ] && continue
-
-          if mountpoint -q "$target"; then
-            echo "Syncing /mnt/boot -> $target"
-            rsync -a --delete --inplace /mnt/boot/ "$target/"
-          else
-            echo "Skipping $target (not mounted)"
-          fi
-        done
-      '';
-    };
-
     system.stateVersion = config.system.nixos.release;
 
     # Reduce closure size (https://github.com/nix-community/nixos-images/blob/main/nix/noninteractive.nix)

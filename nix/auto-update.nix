@@ -70,15 +70,15 @@ in
           systemctl = lib.getExe' cfg.package.systemd "systemctl";
         in
         ''
-          ${nix} flake update --flake ${cfg.root}/config
+          ${nix} flake update --flake "${cfg.root}/config"
 
-          ${nix} build ${cfg.root}/config#nixosConfigurations.xnode.config.system.build.toplevel --out-link ${cfg.root}/new-result
+          ${nix} build "${cfg.root}/config#nixosConfigurations.xnode.config.system.build.toplevel" --out-link "${cfg.root}/new-result"
 
           REBOOT=${if cfg.reboot == "always" then "true" else "false"}
 
-          ${mv} ${cfg.root}/new-result ${cfg.root}/result --no-target-directory
+          ${mv} "${cfg.root}/new-result" "${cfg.root}/result" --no-target-directory
 
-          ${cfg.root}/result/bin/switch-to-configuration switch
+          "${cfg.root}/result/bin/switch-to-configuration" switch
 
           if [[ $REBOOT == true ]]; then
             ${systemctl} reboot

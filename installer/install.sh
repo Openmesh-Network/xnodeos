@@ -42,8 +42,8 @@ nixos-facter -o /var/lib/xnode-manager/host/config/xnode-config/hardware
 cp /etc/xnodeos-config-file /var/lib/xnode-manager/host/config/flake.nix
 cp /etc/xnodeos-config-lock /var/lib/xnode-manager/host/config/flake.lock
 if [[ $VERSION == "latest" ]]; then
-  # Remove version lock
-  sed -i -e "s|\"github:Openmesh-Network/xnodeos/[^\"]*\"|\"github:Openmesh-Network/xnodeos\"|g" /var/lib/xnode-manager/host/config/flake.nix
+  # Lock to major version only
+  sed -i -e 's|"github:Openmesh-Network/xnodeos/v([0-9]+)\.[0-9]+\.[0-9]+"|"github:Openmesh-Network/xnodeos/v\1"|g' /var/lib/xnode-manager/host/config/flake.nix
 fi
 
 # Apply environmental variable configuration
@@ -96,7 +96,6 @@ mount --mkdir -o lazytime,noatime,compress-force=zstd:1,subvol=boot /dev/disk/by
 for i in "${!DISKS[@]}"; do
   mount --mkdir -o umask=0077 "/dev/disk/by-partlabel/disk-disk${i}-ESP" "/mnt/boot${i}"
 done
-systemctl restart esp-sync.path
 
 if [[ $TPM == "2" ]]; then
   # Define policy of allowed TPM2 values
@@ -119,7 +118,7 @@ cp -r /var/lib/sbctl /mnt/var/lib
 cp -r /var/lib/systemd /mnt/var/lib
 
 # Build configuration
-nix build /mnt/var/lib/xnode-manager/host/config#nixosConfigurations.xnode.config.system.build.toplevel --store /mnt --out-link /mnt/var/lib/xnode-manager/host/result --extra-substituters auto?trusted=1 --print-build-logs
+nix build /mnt/var/lib/xnode-manager/host/config#nixosConfigurations.xnode.config.system.build.toplevel --store /mnt --out-link /mnt/var/lib/xnode-manager/host/result --extra-substituters auto?trusted=1
 
 # Apply configuration
 systemd-run --pipe --root-directory /mnt /var/lib/xnode-manager/host/result/sw/bin/bash -c "$(cat << EOL

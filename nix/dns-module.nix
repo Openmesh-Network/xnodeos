@@ -141,30 +141,30 @@ in
         };
       };
 
-      # systemd.network.networks = {
-      #   "80-container-ve" = {
-      #     matchConfig = {
-      #       Kind = "veth";
-      #       Name = "ve-*";
-      #     };
-      #     linkConfig = {
-      #       RequiredForOnline = "no";
-      #     };
-      #     networkConfig = {
-      #       Address = "0.0.0.0/29"; # Single ip address
-      #       LinkLocalAddressing = "no";
-      #       DHCPServer = "yes";
-      #       IPMasquerade = "both";
-      #       LLDP = "no";
-      #       EmitLLDP = "no";
-      #       IPv6AcceptRA = "no";
-      #       IPv6SendRA = "yes";
-      #     };
-      #     dhcpServerConfig = {
-      #       PersistLeases = "runtime";
-      #       LocalLeaseDomain = cfg.container.domain;
-      #     };
-      #   };
-      # };
+      systemd.network.networks = {
+        "80-container-ve" = {
+          matchConfig = {
+            Kind = "veth";
+            Name = "ve-*";
+          };
+          linkConfig = {
+            RequiredForOnline = "no";
+          };
+          networkConfig = {
+            Address = "0.0.0.0/29"; # Single ip address
+            LinkLocalAddressing = "no";
+            DHCPServer = "yes";
+            IPMasquerade = "both";
+            LLDP = "no";
+            EmitLLDP = "no";
+            IPv6AcceptRA = "no";
+            IPv6SendRA = "yes";
+          };
+          dhcpServerConfig = {
+            PersistLeases = "runtime";
+            LocalLeaseDomain = cfg.container.domain;
+          };
+        };
+      };
     };
 }

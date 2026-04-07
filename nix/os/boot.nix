@@ -47,6 +47,8 @@ in
             pkgs.sbctl
             pkgs.systemdUkify
             pkgs.binutils
+            pkgs.util-linux
+            pkgs.rsync
           ]
           ++ lib.optionals (boot == "BIOS") [
             pkgs.gptfdisk
@@ -157,6 +159,9 @@ in
               ''
                 rm -rf "$tmp"
               ''
+
+              # Sync to all ESPs
+              (lib.readFile ./scripts/esp-sync.sh)
             ];
         }
       )}";
