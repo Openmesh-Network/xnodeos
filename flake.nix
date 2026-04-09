@@ -34,6 +34,7 @@
   outputs = inputs: {
     nixosModules = {
       default = import ./nix/nixos-module.nix { inherit inputs; };
+      app = ./nix/app-module.nix;
       container = ./nix/container-module.nix;
       dns = ./nix/dns-module.nix;
       reverse-proxy = ./nix/reverse-proxy-module.nix;
