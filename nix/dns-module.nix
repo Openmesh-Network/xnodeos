@@ -14,10 +14,21 @@ in
       container = {
         domain = lib.mkOption {
           type = lib.types.str;
-          default = "container";
-          example = "lan";
+          default = "container.internal";
+          example = "xnode";
           description = ''
-            TLD to use for container lookup by hostname.
+            TLD to use for container communication on the host.
+          '';
+        };
+      };
+
+      virtual-machine = {
+        domain = lib.mkOption {
+          type = lib.types.str;
+          default = "virtual-machine.internal";
+          example = "xnode";
+          description = ''
+            TLD to use for virtual machine communication on the host.
           '';
         };
       };
@@ -122,6 +133,14 @@ in
             }
             forward . 127.0.0.1:5353
           }
+
+          ${cfg.virtual-machine.domain} {
+            acl {
+              allow net 127.0.0.1 ::1
+              block
+            }
+            forward . 127.0.0.1:5353
+          }
         '';
       };
       systemd.services.coredns.serviceConfig = {
@@ -163,6 +182,29 @@ in
           dhcpServerConfig = {
             PersistLeases = "runtime";
             LocalLeaseDomain = cfg.container.domain;
+          };
+          "80-vm-vt" = {
+            matchConfig = {
+              Kind = "tun";
+              Name = "vt-*";
+            };
+            linkConfig = {
+              RequiredForOnline = "no";
+            };
+            networkConfig = {
+              Address = "0.0.0.0/29"; # Single ip address
+              LinkLocalAddressing = "no";
+              DHCPServer = "yes";
+              IPMasquerade = "both";
+              LLDP = "no";
+              EmitLLDP = "no";
+              IPv6AcceptRA = "no";
+              IPv6SendRA = "yes";
+            };
+            dhcpServerConfig = {
+              PersistLeases = "runtime";
+              LocalLeaseDomain = cfg.virtual-machine.domain;
+            };
           };
         };
       };
