@@ -11,7 +11,7 @@
     (import ./os/boot.nix { inherit inputs; })
     (import ./os/disks.nix { inherit inputs; })
     ./os/network.nix
-    (import ./state-version.nix { config-dir = "/var/lib/xnode-manager/host/config/xnode-config"; })
+    ./state-version.nix
     ./name.nix
     (import ./os/manager.nix { inherit inputs; })
     ./os/minimal.nix
@@ -20,9 +20,10 @@
   ];
 
   config = {
-    xnode.auto-update = {
-      enable = true;
+    xnode = {
       root = "/var/lib/xnode-manager/host";
+      auto-update.enable = true;
+      pin-state-version.enable = true;
     };
   };
 }

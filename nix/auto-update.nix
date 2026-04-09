@@ -26,6 +26,7 @@ in
 
       root = lib.mkOption {
         type = lib.types.str;
+        default = config.xnode.root;
         example = "/";
         description = ''
           Root folder to put result in, the NixOS configuration should be in subfolder ./config.

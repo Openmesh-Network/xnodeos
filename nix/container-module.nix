@@ -1,6 +1,5 @@
 {
   config,
-  lib,
   options,
   ...
 }:
@@ -10,15 +9,16 @@ in
 {
   imports = [
     ./xnode-config.nix
-    (import ./state-version.nix { config-dir = "/config/xnode-config"; })
+    ./state-version.nix
     ./name.nix
     ./auto-update.nix
   ];
 
   config = {
-    xnode.auto-update = {
-      enable = true;
+    xnode = {
       root = "/";
+      auto-update.enable = true;
+      pin-state-version.enable = true;
     };
 
     boot =
