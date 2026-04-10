@@ -17,24 +17,21 @@
     ];
   };
 
-  outputs =
-    { nixpkgs, ... }@inputs:
-    {
-      nixosConfigurations.xnode = nixpkgs.lib.nixosSystem {
-        specialArgs = { inherit inputs; };
-        modules = [
-          inputs.xnodeos.nixosModules.default
-          (
-            { pkgs, ... }@args:
-            {
-              xnode.xnode-config = ./xnode-config;
+  outputs = inputs: {
+    nixosConfigurations.xnode = inputs.nixpkgs.lib.nixosSystem {
+      modules = [
+        inputs.xnodeos.nixosModules.default
+        (
+          { pkgs, ... }@args:
+          {
+            xnode.xnode-config = ./xnode-config;
 
-              # START USER CONFIG
+            # START USER CONFIG
 
-              # END USER CONFIG
-            }
-          )
-        ];
-      };
+            # END USER CONFIG
+          }
+        )
+      ];
     };
+  };
 }
