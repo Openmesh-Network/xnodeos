@@ -24,12 +24,11 @@
         specialArgs = { inherit inputs; };
         modules = [
           inputs.xnodeos.nixosModules.default
-          {
-            xnode.xnode-config = ./xnode-config;
-          }
           (
             { pkgs, ... }@args:
             {
+              xnode.xnode-config = ./xnode-config;
+
               # START USER CONFIG
 
               # END USER CONFIG

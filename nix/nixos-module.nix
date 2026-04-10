@@ -6,9 +6,9 @@
 {
   imports = [
     ./xnode-config.nix
-    (import ./os/base.nix { inherit inputs; })
-    (import ./os/hardware.nix { inherit inputs; })
-    (import ./os/boot.nix { inherit inputs; })
+    ./os/base.nix
+    ./os/hardware.nix
+    ./os/boot.nix
     (import ./os/disks.nix { inherit inputs; })
     ./os/network.nix
     ./state-version.nix

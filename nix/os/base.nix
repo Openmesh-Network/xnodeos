@@ -1,8 +1,5 @@
-{ inputs }:
 {
   config,
-  lib,
-  pkgs,
   ...
 }:
 {
@@ -27,31 +24,24 @@
     systemd.services.dbus-broker.serviceConfig.LimitNOFILE = 65536;
 
     # Nix config
-    nix =
-      let
-        flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
-      in
-      {
-        settings = {
-          experimental-features = [
-            "nix-command"
-            "flakes"
-          ];
-          flake-registry = "";
-          accept-flake-config = true;
-          nix-path = config.nix.nixPath;
-        };
-        registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
-        nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
-
-        optimise.automatic = true;
-        channel.enable = false;
-
-        gc = {
-          automatic = true;
-          dates = "daily";
-          randomizedDelaySec = "24h";
-        };
+    nix = {
+      settings = {
+        experimental-features = [
+          "nix-command"
+          "flakes"
+        ];
+        flake-registry = "";
+        accept-flake-config = true;
       };
+
+      optimise.automatic = true;
+      channel.enable = false;
+
+      gc = {
+        automatic = true;
+        dates = "daily";
+        randomizedDelaySec = "24h";
+      };
+    };
   };
 }
