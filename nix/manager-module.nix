@@ -1,0 +1,512 @@
+{
+  lib,
+  ...
+}:
+{
+  options = {
+    xnode.manager = {
+      cache = lib.mkOption {
+        type = lib.types.listOf (
+          lib.types.submodule {
+            options = {
+              location = lib.mkOption {
+                type = lib.types.str;
+                example = "https://openmesh.cachix.org";
+                description = ''
+                  Where the cache is located.
+                '';
+              };
+
+              public-keys = lib.mkOption {
+                type = lib.types.str;
+                example = [ "du4NDeMWxcX8T5GddfuD0s/Tosl3+6b+T2+CLKHgXvQ=" ];
+                description = ''
+                  What public keys are required to have signed files to download them from this cache. 
+                '';
+              };
+
+              description = lib.mkOption {
+                type = lib.types.str;
+                description = ''
+                  Additional information for the user.
+                '';
+              };
+            };
+          }
+        );
+        default = [ ];
+        example = [
+          {
+            location = "https://nix-community.cachix.org";
+            public-keys = [ "mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=" ];
+          }
+        ];
+        description = ''
+          Recommended caches for xnode-manager to use.
+        '';
+      };
+
+      permission = lib.mkOption {
+        type = lib.types.attrsOf (
+          lib.types.submodule {
+            options =
+              let
+                weight = lib.types.enum [
+                  "Idle"
+                  (lib.types.submodule {
+                    options = {
+                      Value = lib.mkOption {
+                        type = lib.types.int;
+                      };
+                    };
+                  })
+                ];
+              in
+              {
+                process = lib.mkOption {
+                  type = lib.types.nullOr (
+                    lib.types.submodule {
+                      options = {
+                        cpu = {
+                          weight = lib.mkOption {
+                            type = lib.types.nullOr weight;
+                            default = null;
+                            description = ''
+                              In case there is more work than compute power, in what relative priority to allocate compute to this process. (default 100)
+                            '';
+                          };
+
+                          max = lib.mkOption {
+                            type = lib.types.nullOr lib.types.int;
+                            default = null;
+                            description = ''
+                              Maximum compute power this process is allowed to use. (e.g. 100 is one core, 250 is two and a half cores)
+                            '';
+                          };
+
+                          allowed_cores = lib.mkOption {
+                            type = lib.types.nullOr (lib.types.listOf lib.types.int);
+                            default = null;
+                            description = ''
+                              Specific core indexes, the process will only run on these cores.
+                            '';
+                          };
+                        };
+
+                        memory = {
+                          max = lib.mkOption {
+                            type = lib.types.nullOr lib.types.int;
+                            default = null;
+                            description = ''
+                              Hard limit on memory this process is allowed to use in bytes.
+                            '';
+                          };
+
+                          soft_max = lib.mkOption {
+                            type = lib.types.nullOr lib.types.int;
+                            default = null;
+                            description = ''
+                              Memory usage may go above the limit if unavoidable, but the processes are heavily slowed down and memory is taken away aggressively in such cases.
+                            '';
+                          };
+                        };
+
+                        subprocess = {
+                          max = lib.mkOption {
+                            type = lib.types.nullOr lib.types.int;
+                            default = null;
+                            description = ''
+                              Maximum number of subprocesses this process is allowed to spawn.
+                            '';
+                          };
+                        };
+
+                        io = lib.mkOption {
+                          type = lib.types.nullOr (
+                            lib.types.attrsOf (
+                              lib.types.submodule {
+                                options = {
+                                  weight = lib.mkOption {
+                                    type = lib.types.nullOr weight;
+                                    default = null;
+                                    description = ''
+                                      In case there is more work than IO, in what relative priority to allocate IO to this process. (default 100)
+                                    '';
+                                  };
+
+                                  max_bandwidth = lib.mkOption {
+                                    type = lib.types.nullOr (
+                                      lib.types.submodule {
+                                        options = {
+                                          read = lib.mkOption {
+                                            type = lib.types.nullOr lib.types.int;
+                                            default = null;
+                                          };
+
+                                          write = lib.mkOption {
+                                            type = lib.types.nullOr lib.types.int;
+                                            default = null;
+                                          };
+                                        };
+                                      }
+                                    );
+                                    default = null;
+                                    description = ''
+                                      Maximum block IO bandwidth this process is allowed to use in bytes.
+                                    '';
+                                  };
+
+                                  max_iops = lib.mkOption {
+                                    type = lib.types.nullOr (
+                                      lib.types.submodule {
+                                        options = {
+                                          read = lib.mkOption {
+                                            type = lib.types.nullOr lib.types.int;
+                                            default = null;
+                                          };
+
+                                          write = lib.mkOption {
+                                            type = lib.types.nullOr lib.types.int;
+                                            default = null;
+                                          };
+                                        };
+                                      }
+                                    );
+                                    default = null;
+                                    description = ''
+                                      Maximum block IO IOs-per-Second this process is allowed to use.
+                                    '';
+                                  };
+                                };
+                              }
+                            )
+                          );
+                          default = null;
+                        };
+                      };
+                    }
+                  );
+                  default = null;
+                };
+
+                disk = lib.mkOption {
+                  type = lib.types.nullOr (
+                    lib.types.submodule {
+                      options = {
+                        total = lib.mkOption {
+                          type = lib.types.nullOr lib.types.int;
+                          default = null;
+                        };
+                      };
+                    }
+                  );
+                  default = null;
+                };
+
+                bind = lib.mkOption {
+                  type = lib.types.nullOr (
+                    lib.types.attrsOf (
+                      lib.types.submodule {
+                        options = {
+                          path = lib.mkOption {
+                            type = lib.types.nullOr lib.types.str;
+                            default = null;
+                          };
+
+                          readonly = lib.mkOption {
+                            type = lib.types.nullOr lib.types.bool;
+                            default = null;
+                          };
+                        };
+                      }
+                    )
+                  );
+                  default = null;
+                };
+
+                device = lib.mkOption {
+                  type = lib.types.nullOr (
+                    lib.types.submodule {
+                      options = {
+                        policy = lib.mkOption {
+                          type = lib.types.nullOr lib.types.enum [
+                            "Strict"
+                            "Closed"
+                            "Auto"
+                          ];
+                          default = null;
+                        };
+
+                        allow = lib.mkOption {
+                          type = lib.types.nullOr (
+                            lib.types.attrsOf (
+                              lib.types.submodule {
+                                options = {
+                                  read = lib.mkOption {
+                                    type = lib.types.nullOr lib.types.bool;
+                                    default = null;
+                                  };
+
+                                  write = lib.mkOption {
+                                    type = lib.types.nullOr lib.types.bool;
+                                    default = null;
+                                  };
+
+                                  mknod = lib.mkOption {
+                                    type = lib.types.nullOr lib.types.bool;
+                                    default = null;
+                                  };
+                                };
+                              }
+                            )
+                          );
+                          default = null;
+                        };
+                      };
+                    }
+                  );
+                  default = null;
+                };
+
+                extra_args = lib.mkOption {
+                  type = lib.types.nullOr (lib.types.listOf lib.types.str);
+                  default = null;
+                };
+              };
+          }
+        );
+        default = { };
+        example = {
+          container = {
+            process = {
+              cpu = {
+                weight = {
+                  Value = 100;
+                };
+                max = 250;
+                allowed_cores = [
+                  0
+                  1
+                  2
+                  3
+                ];
+              };
+              memory = {
+                max = 1000000000000;
+                soft_max = 500000000000;
+              };
+              subprocess = {
+                max = 4096;
+              };
+              io = {
+                weight = 100;
+                max_bandwidth = {
+                  read = 1000000000;
+                  write = 500000000;
+                };
+                max_iops = {
+                  read = 1000000;
+                  write = 1000000;
+                };
+              };
+            };
+            disk = {
+              total = 10000000000000;
+            };
+            bind = {
+              "/data" = {
+                path = "/host/container/data";
+                readonly = true;
+              };
+            };
+            device = {
+              policy = "closed";
+              allow = {
+                "/dev/dri" = {
+                  read = true;
+                  write = true;
+                  mknod = false;
+                };
+              };
+            };
+            extra_args = [
+              "--network-veth"
+              "--private-users=pick"
+            ];
+          };
+          virtual-machine = {
+            extra_args = [
+              "--network-tap"
+            ];
+          };
+        };
+        description = ''
+          Recommended permissions for xnode-manager to grant.
+        '';
+      };
+
+      expose = lib.mkOption {
+        type = lib.types.attrsOf (
+          lib.types.submodule {
+            options = {
+              protocol = lib.mkOption {
+                type = lib.types.enum [
+                  "http"
+                  "https"
+                ];
+                example = "http";
+                description = ''
+                  What protocol to use to communicate with this endpoint.
+                '';
+              };
+
+              location = lib.mkOption {
+                type = lib.types.enum [
+                  (lib.types.submodule {
+                    options = {
+                      port = lib.mkOption {
+                        type = lib.types.port;
+                        example = 80;
+                        description = ''
+                          What port this endpoint is reachable under.
+                        '';
+                      };
+                    };
+                  })
+                ];
+                example = {
+                  port = 80;
+                };
+                description = ''
+                  The location of this endpoint.
+                '';
+              };
+
+              path = {
+                expose = lib.mkOption {
+                  type = lib.types.str;
+                  default = "/";
+                  example = "/api";
+                  description = ''
+                    The path this endpoint should be exposed under.
+                  '';
+                };
+
+                location = lib.mkOption {
+                  type = lib.types.str;
+                  default = "";
+                  example = "/";
+                  description = ''
+                    The base path to use for the location.
+                  '';
+                };
+              };
+
+              description = lib.mkOption {
+                type = lib.types.str;
+                description = ''
+                  Additional information for the user.
+                '';
+              };
+            };
+          }
+        );
+        default = { };
+        example = {
+          frontend = {
+            protocol = "http";
+            location = {
+              port = 3000;
+            };
+          };
+          api = {
+            protocol = "http";
+            location = {
+              port = 3001;
+            };
+            path.expose = "/api";
+          };
+          admin = {
+            protocol = "http";
+            location = {
+              port = 5000;
+            };
+            path = {
+              expose = "/admin";
+              location = "/"; # Replace `/admin` with `/` in the location request.
+            };
+          };
+        };
+        description = ''
+          Recommended access for xnode-manager to expose.
+        '';
+      };
+
+      ui = lib.mkOption {
+        type = lib.types.attrsOf (
+          lib.types.submodule {
+            options = {
+              protocol = lib.mkOption {
+                type = lib.types.enum [
+                  "http"
+                  "https"
+                ];
+                example = "http";
+                description = ''
+                  What protocol to use to communicate with this UI.
+                '';
+              };
+
+              location = lib.mkOption {
+                type = lib.types.enum [
+                  (lib.types.submodule {
+                    options = {
+                      port = lib.mkOption {
+                        type = lib.types.port;
+                        example = 80;
+                        description = ''
+                          What port this UI is reachable under.
+                        '';
+                      };
+                    };
+                  })
+                ];
+                example = {
+                  port = 80;
+                };
+                description = ''
+                  The location of this UI.
+                '';
+              };
+
+              description = lib.mkOption {
+                type = lib.types.str;
+                description = ''
+                  Additional information for the user.
+                '';
+              };
+            };
+          }
+        );
+        default = { };
+        example = {
+          config = {
+            protocol = "http";
+            location = {
+              port = 3000;
+            };
+          };
+          dashboard = {
+            protocol = "http";
+            location = {
+              port = 3001;
+            };
+          };
+        };
+        description = ''
+          Recommended user interfaces for xnode-manager to display.
+        '';
+      };
+    };
+  };
+}

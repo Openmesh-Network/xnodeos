@@ -183,28 +183,28 @@ in
             PersistLeases = "runtime";
             LocalLeaseDomain = cfg.container.domain;
           };
-          "80-vm-vt" = {
-            matchConfig = {
-              Kind = "tun";
-              Name = "vt-*";
-            };
-            linkConfig = {
-              RequiredForOnline = "no";
-            };
-            networkConfig = {
-              Address = "0.0.0.0/29"; # Single ip address
-              LinkLocalAddressing = "no";
-              DHCPServer = "yes";
-              IPMasquerade = "both";
-              LLDP = "no";
-              EmitLLDP = "no";
-              IPv6AcceptRA = "no";
-              IPv6SendRA = "yes";
-            };
-            dhcpServerConfig = {
-              PersistLeases = "runtime";
-              LocalLeaseDomain = cfg.virtual-machine.domain;
-            };
+        };
+        "80-vm-vt" = {
+          matchConfig = {
+            Kind = "tun";
+            Name = "vt-*";
+          };
+          linkConfig = {
+            RequiredForOnline = "no";
+          };
+          networkConfig = {
+            Address = "0.0.0.0/29"; # Single ip address
+            LinkLocalAddressing = "no";
+            DHCPServer = "yes";
+            IPMasquerade = "both";
+            LLDP = "no";
+            EmitLLDP = "no";
+            IPv6AcceptRA = "no";
+            IPv6SendRA = "yes";
+          };
+          dhcpServerConfig = {
+            PersistLeases = "runtime";
+            LocalLeaseDomain = cfg.virtual-machine.domain;
           };
         };
       };

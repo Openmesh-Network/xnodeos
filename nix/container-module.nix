@@ -9,6 +9,7 @@ in
 {
   imports = [
     ./xnode-config.nix
+    ./manager-module.nix
     ./state-version.nix
     ./name.nix
     ./auto-update.nix

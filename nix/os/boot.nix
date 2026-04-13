@@ -34,12 +34,12 @@ in
     environment.etc."pcrlock.d".source = "${config.systemd.package}/lib/pcrlock.d";
 
     systemd.package = pkgs.systemdUkify;
-    system.boot.loader.id = "uki";
+    system.boot.loader.id = "xnode-boot";
     boot.loader.external = {
       enable = true;
       installHook = "${lib.getExe (
         pkgs.writeShellApplication {
-          name = "install-uki";
+          name = "xnode-boot";
           runtimeInputs = [
             pkgs.jq
             pkgs.coreutils
@@ -105,12 +105,12 @@ in
               (lib.optionalString (boot == "BIOS") ''
                 oc=${
                   let
-                    version = "1.0.6";
+                    version = "1.0.7";
                   in
                   pkgs.fetchzip {
                     name = "open-core-${version}";
                     url = "https://github.com/acidanthera/OpenCorePkg/releases/download/${version}/OpenCore-${version}-RELEASE.zip";
-                    sha256 = "sha256-+YcwRZ4mbbyh4Ivbk1bzLPFLlYtKUON0n+Co0+cp8c8=";
+                    sha256 = "sha256-qLr+wrE+geX+37WH2YUgxyCJXmfJcuUvejuLpaxFEco=";
                     stripRoot = false;
                   }
                 }
@@ -154,13 +154,15 @@ in
                 SYSTEMD_ESP_PATH="$esp" ${config.systemd.package}/lib/systemd/systemd-pcrlock make-policy --pcr=7
               '')
 
+              # Sync to all ESPs
+              ''
+                ${lib.readFile ./scripts/esp-sync.sh}
+              ''
+
               # Remove temporary files
               ''
                 rm -rf "$tmp"
               ''
-
-              # Sync to all ESPs
-              (lib.readFile ./scripts/esp-sync.sh)
             ];
         }
       )}";
