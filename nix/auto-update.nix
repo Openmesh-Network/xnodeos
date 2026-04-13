@@ -53,7 +53,7 @@ in
       wantedBy = [ "timers.target" ];
       timerConfig = {
         OnCalendar = "daily";
-        RandomizedDelaySec = "24h";
+        RandomizedOffsetSec = "24h";
         Persistent = true;
       };
     };

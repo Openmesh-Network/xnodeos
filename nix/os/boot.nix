@@ -33,6 +33,24 @@ in
     ];
     environment.etc."pcrlock.d".source = "${config.systemd.package}/lib/pcrlock.d";
 
+    systemd.services.current-uki-pcrlock = lib.mkIf (tpm == "2") {
+      wantedBy = [ "multi-user.target" ];
+      description = "Update the uki current.pcrlock to the currently booted system.";
+      restartIfChanged = false;
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+      };
+      path = [
+        pkgs.coreutils
+      ];
+      script = ''
+        if [ -f /var/lib/pcrlock.d/650-uki.pcrlock.d/future.pcrlock ]; then
+          mv /var/lib/pcrlock.d/650-uki.pcrlock.d/future.pcrlock /var/lib/pcrlock.d/650-uki.pcrlock.d/current.pcrlock
+        fi
+      '';
+    };
+
     systemd.package = pkgs.systemdUkify;
     system.boot.loader.id = "xnode-boot";
     boot.loader.external = {
@@ -151,7 +169,13 @@ in
 
               # Update unattended disk decryption lock
               (lib.optionalString (tpm == "2") ''
-                SYSTEMD_ESP_PATH="$esp" ${config.systemd.package}/lib/systemd/systemd-pcrlock make-policy --pcr=7
+                ${config.systemd.package}/lib/systemd/systemd-pcrlock lock-secureboot-policy || echo "Could not lock SecureBoot Policy"
+                ${config.systemd.package}/lib/systemd/systemd-pcrlock lock-secureboot-authority || echo "Could not lock SecureBoot Authority"
+
+                mkdir -p /var/lib/pcrlock.d/650-uki.pcrlock.d
+                ${config.systemd.package}/lib/systemd/systemd-pcrlock lock-uki "$esp/EFI/BOOT/BOOT${arch}.EFI" > /var/lib/pcrlock.d/650-uki.pcrlock.d/future.pcrlock
+
+                SYSTEMD_ESP_PATH="$esp" ${config.systemd.package}/lib/systemd/systemd-pcrlock make-policy --pcr=7 --pcr=11 --location="740:940"
               '')
 
               # Sync to all ESPs

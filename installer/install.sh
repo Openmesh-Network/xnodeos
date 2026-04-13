@@ -98,9 +98,8 @@ for i in "${!DISKS[@]}"; do
 done
 
 if [[ $TPM == "2" ]]; then
-  # Define policy of allowed TPM2 values
-  systemd-pcrlock lock-secureboot-policy
-  SYSTEMD_ESP_PATH=/mnt/boot systemd-pcrlock make-policy --pcr=7
+  # Create TPM2 policy
+  systemd-pcrlock make-policy
 
   for i in "${!DISKS[@]}"; do
     # Setup unattended TPM2 boot decryption and remove password decryption

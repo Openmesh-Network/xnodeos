@@ -40,8 +40,9 @@
       gc = {
         automatic = true;
         dates = "daily";
-        randomizedDelaySec = "24h";
       };
     };
+
+    systemd.timers.nix-gc.timerConfig.RandomizedOffsetSec = "24h";
   };
 }
