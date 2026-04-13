@@ -10,17 +10,24 @@
     services.getty.greetingLine = ''<<< Welcome to Openmesh XnodeOS Installer ${config.system.nixos.label} (\m) - \l >>>'';
     services.getty.autologinUser = lib.mkForce "root";
 
-    nix = {
-      settings = {
-        experimental-features = [
-          "nix-command"
-          "flakes"
-        ];
-        flake-registry = "";
-        accept-flake-config = true;
+    nix =
+      let
+        flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
+      in
+      {
+        settings = {
+          experimental-features = [
+            "nix-command"
+            "flakes"
+          ];
+          flake-registry = "";
+          accept-flake-config = true;
+          nix-path = config.nix.nixPath;
+        };
+        registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
+        nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
+        channel.enable = false;
       };
-      channel.enable = false;
-    };
 
     boot.initrd.systemd.enable = true;
     environment.etc."pcrlock.d".source = "${config.systemd.package}/lib/pcrlock.d";
