@@ -120,6 +120,7 @@ cp -r /var/lib/systemd /mnt/var/lib
 nix build /mnt/var/lib/xnode-manager/host/config#nixosConfigurations.xnode.config.system.build.toplevel --store /mnt --out-link /mnt/var/lib/xnode-manager/host/result --extra-substituters auto?trusted=1
 
 # Apply configuration
+systemd-firstboot --root /mnt --setup-machine-id
 systemd-run --pipe --root-directory /mnt /var/lib/xnode-manager/host/result/sw/bin/bash -c "$(cat << EOL
 set -e
 /var/lib/xnode-manager/host/result/activate || true

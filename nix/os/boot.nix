@@ -175,7 +175,7 @@ in
                 mkdir -p /var/lib/pcrlock.d/650-uki.pcrlock.d
                 ${config.systemd.package}/lib/systemd/systemd-pcrlock lock-uki "$esp/EFI/BOOT/BOOT${arch}.EFI" > /var/lib/pcrlock.d/650-uki.pcrlock.d/future.pcrlock
 
-                SYSTEMD_ESP_PATH="$esp" ${config.systemd.package}/lib/systemd/systemd-pcrlock make-policy --pcr=7 --pcr=11 --location="740:940"
+                SYSTEMD_ESP_PATH="$esp" ${config.systemd.package}/lib/systemd/systemd-pcrlock make-policy --pcr=7 --pcr=11 --location="740:940" ''${NIXOS_INSTALL_BOOTLOADER:+--force}
               '')
 
               # Sync to all ESPs
