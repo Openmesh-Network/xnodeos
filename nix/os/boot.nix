@@ -16,6 +16,12 @@ let
       builtins.readFile "${cfg.xnode-config}/boot"
     else
       "";
+  update-pcr-lock = ''
+    ${config.systemd.package}/lib/systemd/systemd-pcrlock lock-secureboot-policy || echo "Could not lock SecureBoot Policy"
+    ${config.systemd.package}/lib/systemd/systemd-pcrlock lock-secureboot-authority || echo "Could not lock SecureBoot Authority"
+
+    SYSTEMD_ESP_PATH="$esp" ${config.systemd.package}/lib/systemd/systemd-pcrlock make-policy --pcr=7 --pcr=11 --location="740:940" ''${NIXOS_INSTALL_BOOTLOADER:+--force}
+  '';
 in
 {
   config = {
@@ -36,6 +42,7 @@ in
     systemd.services.current-uki-pcrlock = lib.mkIf (tpm == "2") {
       wantedBy = [ "multi-user.target" ];
       description = "Update the uki current.pcrlock to the currently booted system.";
+      wants = [ "esp-sync.service" ];
       restartIfChanged = false;
       serviceConfig = {
         Type = "oneshot";
@@ -47,6 +54,8 @@ in
       script = ''
         if [ -f /var/lib/pcrlock.d/650-uki.pcrlock.d/future.pcrlock ]; then
           mv /var/lib/pcrlock.d/650-uki.pcrlock.d/future.pcrlock /var/lib/pcrlock.d/650-uki.pcrlock.d/current.pcrlock
+          esp="${config.boot.loader.efi.efiSysMountPoint}"
+          ${update-pcr-lock}
         fi
       '';
     };
@@ -85,7 +94,7 @@ in
                 init=$(jq -r '."org.nixos.bootspec.v1".init' "$boot_json")
                 kernelParams=$(jq -r '."org.nixos.bootspec.v1".kernelParams | join(" ")' "$boot_json")
 
-                esp=/boot
+                esp="${config.boot.loader.efi.efiSysMountPoint}"
                 tmp=$(mktemp -d)
               ''
 
@@ -169,13 +178,8 @@ in
 
               # Update unattended disk decryption lock
               (lib.optionalString (tpm == "2") ''
-                ${config.systemd.package}/lib/systemd/systemd-pcrlock lock-secureboot-policy || echo "Could not lock SecureBoot Policy"
-                ${config.systemd.package}/lib/systemd/systemd-pcrlock lock-secureboot-authority || echo "Could not lock SecureBoot Authority"
-
-                mkdir -p /var/lib/pcrlock.d/650-uki.pcrlock.d
-                ${config.systemd.package}/lib/systemd/systemd-pcrlock lock-uki "$esp/EFI/BOOT/BOOT${arch}.EFI" > /var/lib/pcrlock.d/650-uki.pcrlock.d/future.pcrlock
-
-                SYSTEMD_ESP_PATH="$esp" ${config.systemd.package}/lib/systemd/systemd-pcrlock make-policy --pcr=7 --pcr=11 --location="740:940" ''${NIXOS_INSTALL_BOOTLOADER:+--force}
+                ${config.systemd.package}/lib/systemd/systemd-pcrlock lock-uki "$esp/EFI/BOOT/BOOT${arch}.EFI" --pcrlock="/var/lib/pcrlock.d/650-uki.pcrlock.d/future.pcrlock"
+                ${update-pcr-lock}
               '')
 
               # Sync to all ESPs

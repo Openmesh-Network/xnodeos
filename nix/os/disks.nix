@@ -125,24 +125,43 @@ in
         fileSystems = [ "/" ];
       };
 
-      systemd.paths.esp-sync = {
-        wantedBy = [ "multi-user.target" ];
-        description = "Watch for /boot changes";
-        pathConfig = {
-          PathModified = "/boot/";
-        };
-      };
-
       systemd.services.esp-sync = {
+        wantedBy = [ "multi-user.target" ];
         description = "Sync /boot to all ESPs";
+        unitConfig.X-StopOnReconfiguration = true;
         serviceConfig = {
-          Type = "oneshot";
+          Type = "notify";
+          NotifyAccess = "all";
         };
         path = [
+          pkgs.inotify-tools
+          config.systemd.package
           pkgs.util-linux
           pkgs.rsync
         ];
-        script = lib.readFile ./scripts/esp-sync.sh;
+        script = ''
+          inotifywait --monitor --recursive --event close_write,create,delete,moved_to,moved_from /boot/ 2> >( 
+            # Wait for readiness message
+            while read line; do
+              echo "$line" >&2
+              if [ "$line" = "Watches established." ]; then
+                systemd-notify --ready
+              fi
+            done
+          ) | while read line; do 
+            if [ -z "$debounce" ]; then
+              debounce=1
+              echo "TRIGGER: $line"
+              (
+                sleep 0.01
+                debounce=
+                ${lib.readFile ./scripts/esp-sync.sh}
+              ) &
+            else
+              echo "DEBOUNCED: $line"
+            fi
+          done
+        '';
       };
     }
   ];
