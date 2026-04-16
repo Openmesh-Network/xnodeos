@@ -13,6 +13,10 @@ in
 {
   imports = [
     ./xnode-config.nix
-  ]
-  ++ (if type == "container" then [ ./container-module.nix ] else [ ]);
+    ./container-module.nix
+  ];
+
+  config = {
+    xnode.container.enable = type == "container";
+  };
 }

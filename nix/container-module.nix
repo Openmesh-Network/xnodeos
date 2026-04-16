@@ -1,6 +1,7 @@
 {
   config,
   options,
+  lib,
   ...
 }:
 let
@@ -15,7 +16,13 @@ in
     ./auto-update.nix
   ];
 
-  config = {
+  options = {
+    xnode.container = {
+      enable = lib.mkEnableOption "run system in container";
+    };
+  };
+
+  config = lib.mkIf cfg.container.enable {
     xnode = {
       root = "/";
       auto-update.enable = true;
