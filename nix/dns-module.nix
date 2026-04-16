@@ -150,6 +150,7 @@ in
       };
 
       systemd.tmpfiles.rules = [
+        "d ${acme-dir} - - - - -"
         "A ${acme-dir} - - - - g:xnode-reverse-proxy:rw"
       ];
 
