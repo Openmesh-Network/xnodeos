@@ -89,7 +89,7 @@ in
         enable = true;
         settings.Resolve = {
           DNSStubListener = "no";
-          DNSStubListenerExtra = "127.0.0.1:5353";
+          DNSStubListenerExtra = "127.0.0.1:5352";
         };
       };
 
@@ -101,7 +101,7 @@ in
               directory ${acme-dir}
               reload 10s
             }
-            forward . 127.0.0.1:5353
+            forward . 127.0.0.1:5352
           }
 
           internal. {
@@ -110,7 +110,7 @@ in
               block
             }
             rewrite name suffix .internal. . answer auto
-            forward . 127.0.0.1:5353
+            forward . 127.0.0.1:5352
           }
         '';
       };
