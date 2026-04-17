@@ -129,6 +129,14 @@ in
         nameservers = [ "127.0.0.1" ];
         firewall = {
           allowedUDPPorts = lib.mkIf cfg.openFirewall [ 53 ];
+          extraCommands = ''
+            iptables -A INPUT -i ve-+ -p udp -m udp --dport 67 -j ACCEPT
+            iptables -A INPUT -i vt-+ -p udp -m udp --dport 67 -j ACCEPT
+          '';
+          extraStopCommands = ''
+            iptables -D INPUT -i ve-+ -p udp -m udp --dport 67 -j ACCEPT || true
+            iptables -D INPUT -i vt-+ -p udp -m udp --dport 67 -j ACCEPT || true
+          '';
         };
       };
 
