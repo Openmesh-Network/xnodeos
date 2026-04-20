@@ -59,9 +59,10 @@ in
           };
           networkConfig = {
             DHCP = "yes";
-            IPv6AcceptRA = "no";
+            LinkLocalAddressing = "no";
           };
-          dhcpV4Config.RouteMetric = 100;
+          dhcpV4Config.UseDNS = false;
+          dhcpV6Config.UseDNS = false;
         };
       };
     };

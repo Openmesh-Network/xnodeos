@@ -9,7 +9,7 @@ in
 {
   options = {
     services.xnode-dns = {
-      enable = lib.mkEnableOption "Enable Xnode DNS.";
+      enable = lib.mkEnableOption "Xnode DNS";
 
       soa = {
         nameserver = lib.mkOption {
@@ -57,6 +57,19 @@ in
           default = "3600";
           description = ''
             The unsigned 32 bit minimum TTL field that should be exported with any RR from this zone.
+          '';
+        };
+      };
+
+      mdns = {
+        enable = lib.mkEnableOption "Xnode Multicast DNS";
+
+        openFirewall = lib.mkOption {
+          type = lib.types.bool;
+          default = true;
+          example = false;
+          description = ''
+            Allow multicast DNS traffic to go through firewall.
           '';
         };
       };
@@ -125,68 +138,12 @@ in
         "A ${acme-dir} - - - - g:xnode-reverse-proxy:rw"
       ];
 
-      networking = {
-        nameservers = [ "127.0.0.1" ];
-        firewall = {
-          allowedUDPPorts = lib.mkIf cfg.openFirewall [ 53 ];
-          extraCommands = ''
-            iptables -A INPUT -i ve-+ -p udp -m udp --dport 67 -j ACCEPT
-            iptables -A INPUT -i vt-+ -p udp -m udp --dport 67 -j ACCEPT
-          '';
-          extraStopCommands = ''
-            iptables -D INPUT -i ve-+ -p udp -m udp --dport 67 -j ACCEPT || true
-            iptables -D INPUT -i vt-+ -p udp -m udp --dport 67 -j ACCEPT || true
-          '';
-        };
-      };
-
-      systemd.network.networks = {
-        "80-container-ve" = {
-          matchConfig = {
-            Kind = "veth";
-            Name = "ve-*";
-          };
-          linkConfig = {
-            RequiredForOnline = "no";
-          };
-          networkConfig = {
-            Address = "0.0.0.0/29"; # Single ip address
-            LinkLocalAddressing = "no";
-            DHCPServer = "yes";
-            IPMasquerade = "both";
-            LLDP = "no";
-            EmitLLDP = "no";
-            IPv6AcceptRA = "no";
-            IPv6SendRA = "yes";
-          };
-          dhcpServerConfig = {
-            PersistLeases = "runtime";
-            LocalLeaseDomain = "container.internal";
-          };
-        };
-        "80-vm-vt" = {
-          matchConfig = {
-            Kind = "tun";
-            Name = "vt-*";
-          };
-          linkConfig = {
-            RequiredForOnline = "no";
-          };
-          networkConfig = {
-            Address = "0.0.0.0/29"; # Single ip address
-            LinkLocalAddressing = "no";
-            DHCPServer = "yes";
-            IPMasquerade = "both";
-            LLDP = "no";
-            EmitLLDP = "no";
-            IPv6AcceptRA = "no";
-            IPv6SendRA = "yes";
-          };
-          dhcpServerConfig = {
-            PersistLeases = "runtime";
-            LocalLeaseDomain = "virtual-machine.internal";
-          };
-        };
-      };
-    };
+      networking.firewall.allowedUDPPorts = lib.mkIf cfg.openFirewall [ 53 ];
+    }
+    // (lib.mkIf cfg.mdns.enable {
+      services.resolved.settings.Resolve."MulticastDNS" = "yes";
+      systemd.network.networks."89-ethernet".networkConfig."MulticastDNS" = "yes";
+      systemd.network.networks."80-wifi-station".networkConfig."MulticastDNS" = "yes";
+      networking.firewall.allowedUDPPorts = lib.mkIf cfg.mdns.openFirewall [ 5353 ];
+    });
 }

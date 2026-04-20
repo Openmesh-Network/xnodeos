@@ -39,6 +39,11 @@ in
         wireless.iwd = {
           enable = true;
         };
+        nftables.enable = true;
+        firewall = {
+          interfaces."ve-*".allowedUDPPorts = [ 67 ];
+          interfaces."vt-*".allowedUDPPorts = [ 67 ];
+        };
       };
 
       systemd.network = {
@@ -48,21 +53,95 @@ in
           anyInterface = true;
         };
         networks = {
-          "99-wired" = {
-            matchConfig.Name = "en*";
+          "89-ethernet" = {
+            matchConfig = {
+              Kind = "!*";
+              Type = "ether";
+            };
             networkConfig = {
               DHCP = "yes";
+              LinkLocalAddressing = "no";
             };
+            dhcpV4Config.UseDNS = false;
+            dhcpV6Config.UseDNS = false;
             dhcpV4Config.RouteMetric = 100;
             ipv6AcceptRAConfig.RouteMetric = 100;
           };
-          "99-wireless" = {
-            matchConfig.Name = "wl*";
+          "80-wifi-station" = {
+            matchConfig = {
+              Type = "wlan";
+              WLANInterfaceType = "station";
+            };
             networkConfig = {
               DHCP = "yes";
+              LinkLocalAddressing = "no";
             };
+            dhcpV4Config.UseDNS = false;
+            dhcpV6Config.UseDNS = false;
             dhcpV4Config.RouteMetric = 200;
             ipv6AcceptRAConfig.RouteMetric = 200;
+          };
+          "80-wifi-ap" = {
+            matchConfig = {
+              Type = "wlan";
+              WLANInterfaceType = "ap";
+            };
+            networkConfig = {
+              Address = "0.0.0.0/24";
+              DHCPServer = "yes";
+              IPMasquerade = "both";
+              IPv6AcceptRA = "no";
+              IPv6SendRA = "yes";
+            };
+            dhcpServerConfig = {
+              LocalLeaseDomain = "home.arpa";
+            };
+          };
+          "80-container-ve" = {
+            matchConfig = {
+              Kind = "veth";
+              Name = "ve-*";
+            };
+            linkConfig = {
+              RequiredForOnline = "no";
+            };
+            networkConfig = {
+              Address = "0.0.0.0/29"; # Single ip address
+              LinkLocalAddressing = "no";
+              DHCPServer = "yes";
+              IPMasquerade = "both";
+              LLDP = "no";
+              EmitLLDP = "no";
+              IPv6AcceptRA = "no";
+              IPv6SendRA = "yes";
+            };
+            dhcpServerConfig = {
+              PersistLeases = "runtime";
+              LocalLeaseDomain = "container.internal";
+            };
+          };
+          "80-vm-vt" = {
+            matchConfig = {
+              Kind = "tun";
+              Name = "vt-*";
+            };
+            linkConfig = {
+              RequiredForOnline = "no";
+            };
+            networkConfig = {
+              Address = "0.0.0.0/29"; # Single ip address
+              LinkLocalAddressing = "no";
+              DHCPServer = "yes";
+              IPMasquerade = "both";
+              LLDP = "no";
+              EmitLLDP = "no";
+              IPv6AcceptRA = "no";
+              IPv6SendRA = "yes";
+            };
+            dhcpServerConfig = {
+              PersistLeases = "runtime";
+              LocalLeaseDomain = "virtual-machine.internal";
+            };
           };
         };
       };

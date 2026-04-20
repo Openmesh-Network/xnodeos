@@ -6,10 +6,16 @@
   config = {
     users.mutableUsers = false; # Prevent non-declarative users
     users.allowNoPasswordLogin = true; # Allow a system without any users that can be logged into
-    services.getty.greetingLine = ''<<< Welcome to Openmesh XnodeOS ${config.system.nixos.label} (\m) - \l >>>''; # Change greeting to specify XnodeOS
+
     zramSwap.enable = true; # Compress memory
     services.fwupd.enable = true; # Allow applications to update firmware
     services.dbus.implementation = "broker"; # High performance and reliability implementation of D-Bus
+
+    # Change greeting to XnodeOS + ip address
+    services.getty.greetingLine = ''
+      <<< Welcome to Openmesh XnodeOS ${config.system.nixos.label} (\m) - \l >>>
+      Access remotely through: \4
+    '';
 
     # Update limits
     boot.kernel.sysctl = {
