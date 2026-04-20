@@ -98,6 +98,11 @@ in
                 tmp=$(mktemp -d)
               ''
 
+              # Stop automatic ESP sync (will be done manually at end of installation)
+              ''
+                systemctl stop esp-sync.service || true
+              ''
+
               # Build UKI
               ''
                 ukify build \

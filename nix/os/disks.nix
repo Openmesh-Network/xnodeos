@@ -128,7 +128,6 @@ in
       systemd.services.esp-sync = {
         wantedBy = [ "multi-user.target" ];
         description = "Sync /boot to all ESPs";
-        unitConfig.X-StopOnReconfiguration = true;
         serviceConfig = {
           Type = "notify";
           NotifyAccess = "all";
