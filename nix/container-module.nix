@@ -42,7 +42,6 @@ in
           };
           networkConfig = {
             DHCP = "yes";
-            LinkLocalAddressing = "no";
           };
           dhcpV4Config.UseDNS = false;
           dhcpV6Config.UseDNS = false;

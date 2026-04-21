@@ -60,7 +60,6 @@ in
             };
             networkConfig = {
               DHCP = "yes";
-              LinkLocalAddressing = "no";
             };
             dhcpV4Config.UseDNS = false;
             dhcpV6Config.UseDNS = false;
@@ -74,7 +73,6 @@ in
             };
             networkConfig = {
               DHCP = "yes";
-              LinkLocalAddressing = "no";
             };
             dhcpV4Config.UseDNS = false;
             dhcpV6Config.UseDNS = false;
@@ -107,7 +105,6 @@ in
             };
             networkConfig = {
               Address = "0.0.0.0/29"; # Single ip address
-              LinkLocalAddressing = "no";
               DHCPServer = "yes";
               IPMasquerade = "both";
               LLDP = "no";
@@ -130,7 +127,6 @@ in
             };
             networkConfig = {
               Address = "0.0.0.0/29"; # Single ip address
-              LinkLocalAddressing = "no";
               DHCPServer = "yes";
               IPMasquerade = "both";
               LLDP = "no";
