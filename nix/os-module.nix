@@ -6,6 +6,7 @@
 {
   imports = [
     ./xnode-config.nix
+    ./nix-settings.nix
     ./os/base.nix
     ./os/hardware.nix
     ./os/boot.nix

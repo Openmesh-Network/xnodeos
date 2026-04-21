@@ -23,11 +23,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1776169885,
-        "narHash": "sha256-Gk2T0tDDDAs319hp/ak+bAIUG5bPMvnNEjPV8CS86Fg=",
-        "rev": "4bd9165a9165d7b5e33ae57f3eecbcb28fb231c9",
+        "lastModified": 1776548001,
+        "narHash": "sha256-qH3mBrZnNsPdwpAgvG2Olgzsp5kt+Sibpm1tx1pxkcQ=",
+        "rev": "b12141ef619e0a9c1c84dc8c684040326f27cdcc",
         "type": "tarball",
-        "url": "https://releases.nixos.org/nixos/unstable/nixos-26.05pre980183.4bd9165a9165/nixexprs.tar.xz"
+        "url": "https://releases.nixos.org/nixos/unstable/nixos-26.05pre982522.b12141ef619e/nixexprs.tar.xz"
       },
       "original": {
         "type": "tarball",
@@ -102,11 +102,11 @@
         "systems": "systems_2"
       },
       "locked": {
-        "lastModified": 1776699830,
-        "narHash": "sha256-lyBXsWs3mOXxMHkrzobABp/IqA1zAWvBqukgEp4pmuQ=",
+        "lastModified": 1776767575,
+        "narHash": "sha256-kRLP+/sAnI6wOvVpGoB8zhbXPXIRHGt06rE9M9gUzq8=",
         "owner": "Openmesh-Network",
         "repo": "xnode-manager",
-        "rev": "9b650f57696b00ae06e1671917d8598342a17ba4",
+        "rev": "e6cd306e50d18dcf68b5ddf1839666d749ec5f76",
         "type": "github"
       },
       "original": {

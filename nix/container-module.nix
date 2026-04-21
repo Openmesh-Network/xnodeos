@@ -9,11 +9,6 @@ let
 in
 {
   imports = [
-    ./xnode-config.nix
-    ./manager-module.nix
-    ./state-version.nix
-    ./name.nix
-    ./auto-update.nix
   ];
 
   options = {
@@ -23,23 +18,11 @@ in
   };
 
   config = lib.mkIf cfg.container.enable {
-    xnode = {
-      root = "/";
-      auto-update.enable = true;
-      pin-state-version.enable = true;
-    };
-
     boot =
       if builtins.hasAttr "isNspawnContainer" options.boot then
         { isNspawnContainer = true; }
       else
         { isContainer = true; };
-
-    nixpkgs.hostPlatform =
-      if (builtins.pathExists "${cfg.xnode-config}/host-platform") then
-        builtins.readFile "${cfg.xnode-config}/host-platform"
-      else
-        "x86_64-linux";
 
     networking = {
       useDHCP = false;

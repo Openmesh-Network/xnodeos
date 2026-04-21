@@ -14,7 +14,7 @@
     # Change greeting to XnodeOS + ip address
     services.getty.greetingLine = ''
       <<< Welcome to Openmesh XnodeOS ${config.system.nixos.label} (\m) - \l >>>
-      Access remotely through: \4
+      Access remotely through: \4 \6
     '';
 
     # Update limits
@@ -28,27 +28,5 @@
     };
     systemd.services.nginx.serviceConfig.LimitNOFILE = 65536;
     systemd.services.dbus-broker.serviceConfig.LimitNOFILE = 65536;
-
-    # Nix config
-    nix = {
-      settings = {
-        experimental-features = [
-          "nix-command"
-          "flakes"
-        ];
-        flake-registry = "";
-        accept-flake-config = true;
-      };
-
-      optimise.automatic = true;
-      channel.enable = false;
-
-      gc = {
-        automatic = true;
-        dates = "daily";
-      };
-    };
-
-    systemd.timers.nix-gc.timerConfig.RandomizedOffsetSec = "24h";
   };
 }
