@@ -1,7 +1,4 @@
-{
-  config,
-  ...
-}:
+{ config, pkgs, ... }:
 {
   config = {
     users.mutableUsers = false; # Prevent non-declarative users
@@ -28,5 +25,32 @@
     };
     systemd.services.nginx.serviceConfig.LimitNOFILE = 65536;
     systemd.services.dbus-broker.serviceConfig.LimitNOFILE = 65536;
+
+    systemd.package =
+      let
+        kernelDev = config.system.build.kernel.dev;
+        vmlinuxH = pkgs.runCommand "vmlinux.h" { } ''
+          mkdir -p $out
+          ${pkgs.bpftools}/bin/bpftool btf dump file ${kernelDev}/vmlinux format c > $out/vmlinux.h
+        '';
+      in
+      pkgs.systemdUkify.overrideAttrs (old: {
+        mesonFlags = old.mesonFlags ++ [
+          "-Dvmlinux-h=provided"
+          "-Dvmlinux-h-path=${vmlinuxH}/vmlinux.h"
+        ];
+        nativeBuildInputs = old.nativeBuildInputs ++ [ pkgs.bpftools ];
+      });
+
+    systemd.additionalUpstreamSystemUnits = [
+      "systemd-nsresourced.service"
+      "systemd-nsresourced.socket"
+      "systemd-mountfsd.service"
+      "systemd-mountfsd.socket"
+    ];
+    systemd.services.systemd-nsresourced.wantedBy = [ "multi-user.target" ];
+    systemd.sockets.systemd-nsresourced.wantedBy = [ "sockets.target" ];
+    systemd.services.systemd-mountfsd.wantedBy = [ "multi-user.target" ];
+    systemd.sockets.systemd-mountfsd.wantedBy = [ "sockets.target" ];
   };
 }

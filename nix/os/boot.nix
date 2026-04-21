@@ -60,7 +60,6 @@ in
       '';
     };
 
-    systemd.package = pkgs.systemdUkify;
     system.boot.loader.id = "xnode-boot";
     boot.loader.external = {
       enable = true;
@@ -71,7 +70,7 @@ in
             pkgs.jq
             pkgs.coreutils
             pkgs.sbctl
-            pkgs.systemdUkify
+            config.systemd.package
             pkgs.binutils
             pkgs.util-linux
             pkgs.rsync

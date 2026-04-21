@@ -1,5 +1,10 @@
 { inputs }:
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   cfg = config.xnode;
   owner =
@@ -34,7 +39,31 @@ in
     systemd.services."acme-order-renew-manager.xnode.local".script =
       lib.mkForce ''echo "selfsigned only"'';
 
-    services.xnode-manager.enable = true;
+    services.xnode-manager = {
+      enable = true;
+      buildBase =
+        (lib.nixosSystem {
+          inherit pkgs;
+          modules = [
+            (
+              { pkgs, ... }@args:
+              {
+                imports = [ inputs.self.nixosModules.app ];
+
+                config = {
+                  nix.settings.sandbox = false;
+                  xnode = {
+                    xnode-config = pkgs.emptyDirectory;
+                    container.enable = args.lib.mkForce true;
+                    auto-update.enable = args.lib.mkForce false;
+                    pin-state-version.enable = args.lib.mkForce false;
+                  };
+                };
+              }
+            )
+          ];
+        }).config.system.build.toplevel.outPath;
+    };
 
     services.xnode-dns = {
       enable = true;

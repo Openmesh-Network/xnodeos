@@ -331,7 +331,9 @@
             };
             extra_args = [
               "--network-veth"
-              "--private-users=pick"
+              "--private-users=managed"
+              "--private-users-ownership=map"
+              "--private-users-delegate=1"
             ];
           };
           virtual-machine = {
