@@ -41,6 +41,7 @@ in
         };
         nftables.enable = true;
         firewall = {
+          interfaces."ns-*".allowedUDPPorts = [ 67 ];
           interfaces."ve-*".allowedUDPPorts = [ 67 ];
           interfaces."vt-*".allowedUDPPorts = [ 67 ];
         };
@@ -95,6 +96,28 @@ in
               LocalLeaseDomain = "home.arpa";
             };
           };
+          "80-namespace-ns" = {
+            matchConfig = {
+              Kind = "veth";
+              Name = "ns-*";
+            };
+            linkConfig = {
+              RequiredForOnline = "no";
+            };
+            networkConfig = {
+              Address = "0.0.0.0/29";
+              DHCPServer = "yes";
+              IPMasquerade = "both";
+              LLDP = "no";
+              EmitLLDP = "no";
+              IPv6AcceptRA = "no";
+              IPv6SendRA = "yes";
+            };
+            dhcpServerConfig = {
+              PersistLeases = "runtime";
+              LocalLeaseDomain = "container.internal";
+            };
+          };
           "80-container-ve" = {
             matchConfig = {
               Kind = "veth";
@@ -104,7 +127,7 @@ in
               RequiredForOnline = "no";
             };
             networkConfig = {
-              Address = "0.0.0.0/29"; # Single ip address
+              Address = "0.0.0.0/29";
               DHCPServer = "yes";
               IPMasquerade = "both";
               LLDP = "no";
@@ -126,7 +149,7 @@ in
               RequiredForOnline = "no";
             };
             networkConfig = {
-              Address = "0.0.0.0/29"; # Single ip address
+              Address = "0.0.0.0/29";
               DHCPServer = "yes";
               IPMasquerade = "both";
               LLDP = "no";

@@ -27,6 +27,7 @@ in
     networking = {
       useDHCP = false;
       useNetworkd = true;
+      nftables.enable = true;
     };
     systemd.network = {
       enable = true;

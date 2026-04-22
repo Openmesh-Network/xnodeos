@@ -332,7 +332,7 @@
             extra_args = [
               "--network-veth"
               "--private-users=managed"
-              "--private-users-ownership=map"
+              "--private-users-ownership=foreign"
               "--private-users-delegate=1"
             ];
           };

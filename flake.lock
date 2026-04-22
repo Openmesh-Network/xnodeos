@@ -102,11 +102,11 @@
         "systems": "systems_2"
       },
       "locked": {
-        "lastModified": 1776809256,
-        "narHash": "sha256-nsMpbkuachj622KBY/4UxZLFxGfpqz/uDJtmE0Z3dBM=",
+        "lastModified": 1776860903,
+        "narHash": "sha256-kbZawbubPkOdrvpmwXf5VoWtodR3G364NofUSKqyqxo=",
         "owner": "Openmesh-Network",
         "repo": "xnode-manager",
-        "rev": "dfb90da3ca9f0ac82101582323f3f4e864625580",
+        "rev": "c015325f46eef3c1398ee188ff83237788c699ea",
         "type": "github"
       },
       "original": {
