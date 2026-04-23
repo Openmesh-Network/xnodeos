@@ -64,6 +64,9 @@ in
       serviceConfig = {
         Type = "oneshot";
       };
+      environment = {
+        "NIX_REMOTE" = "daemon";
+      };
       script =
         let
           nix = lib.getExe cfg.package.nix;

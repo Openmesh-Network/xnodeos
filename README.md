@@ -32,5 +32,5 @@ curl -L https://opnm.sh/install | bash 2>&1
 #cloud-config
 runcmd:
  - |
-   export DOMAIN="xnode.plopmenz.com" && export EMAIL="plopmenz@gmail.com" && export OWNER="eth:519ce4c129a981b2cbb4c3990b1391da24e8ebf3" && curl https://raw.githubusercontent.com/Openmesh-Network/xnodeos/main/install.sh | bash 2>&1 | tee /tmp/xnodeos.log
+   export DOMAIN="plopmenz.com" && export EMAIL="plopmenz@gmail.com" && export OWNER="eth:519ce4c129a981b2cbb4c3990b1391da24e8ebf3" && curl https://raw.githubusercontent.com/Openmesh-Network/xnodeos/main/install.sh | bash 2>&1 | tee /tmp/xnodeos.log
 ```

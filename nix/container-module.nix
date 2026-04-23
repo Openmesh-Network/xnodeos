@@ -8,9 +8,6 @@ let
   cfg = config.xnode;
 in
 {
-  imports = [
-  ];
-
   options = {
     xnode.container = {
       enable = lib.mkEnableOption "run system in container";

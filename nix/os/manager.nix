@@ -25,8 +25,8 @@ let
 in
 {
   imports = [
-    ../dns-module.nix
-    ../reverse-proxy-module.nix
+    inputs.self.nixosModules.dns
+    inputs.self.nixosModules.reverse-proxy
     inputs.xnode-manager.nixosModules.default
     inputs.xnode-auth.nixosModules.default
   ];
@@ -58,6 +58,7 @@ in
                     auto-update.enable = args.lib.mkForce false;
                     pin-state-version.enable = args.lib.mkForce false;
                   };
+                  system.stateVersion = args.config.system.nixos.release;
                 };
               }
             )
@@ -67,18 +68,23 @@ in
 
     services.xnode-dns = {
       enable = true;
-      soa.nameserver = if (domain != "") then domain else "manager.xnode.local";
+      soa.nameserver = if (domain != "") then domain else "xnode.local";
     };
 
     services.xnode-reverse-proxy = {
       enable = true;
-      rules = builtins.listToAttrs (
-        builtins.map (domain: {
-          name = domain;
-          value = [
-            { forward = "http://unix:${config.services.xnode-manager.socket}"; }
-          ];
-        }) ([ "manager.xnode.local" ] ++ (lib.optionals (domain != "") [ domain ]))
+      https = builtins.listToAttrs (
+        builtins.map
+          (domain: {
+            name = domain;
+            value."/".locations = [
+              { socket = config.services.xnode-manager.socket; }
+            ];
+          })
+          (
+            [ "manager.xnode.local" ]
+            ++ (lib.optionals (domain != "" && domain != "xnode.local") [ "manager.${domain}" ])
+          )
       );
     };
 
@@ -86,21 +92,26 @@ in
       enable = true;
       domains = lib.mkIf (owner != "") (
         builtins.listToAttrs (
-          builtins.map (domain: {
-            name = domain;
-            value = {
-              accessList = {
-                users = {
-                  "${owner}" = {
-                    roles = [ "owner" ];
+          builtins.map
+            (domain: {
+              name = domain;
+              value = {
+                accessList = {
+                  users = {
+                    "${owner}" = {
+                      roles = [ "owner" ];
+                    };
+                  };
+                  roles = {
+                    "owner" = { };
                   };
                 };
-                roles = {
-                  "owner" = { };
-                };
               };
-            };
-          }) ([ "manager.xnode.local" ] ++ (lib.optionals (domain != "") [ domain ]))
+            })
+            (
+              [ "manager.xnode.local" ]
+              ++ (lib.optionals (domain != "" && domain != "xnode.local") [ "manager.${domain}" ])
+            )
         )
       );
     };

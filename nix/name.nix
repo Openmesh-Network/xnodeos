@@ -1,11 +1,14 @@
-{ config, lib, ... }:
+{ config, ... }:
 let
   cfg = config.xnode;
+  name =
+    if (builtins.pathExists "${cfg.xnode-config}/name") then
+      builtins.readFile "${cfg.xnode-config}/name"
+    else
+      "xnode";
 in
 {
   config = {
-    networking.hostName = lib.mkIf (builtins.pathExists "${cfg.xnode-config}/name") (
-      builtins.readFile "${cfg.xnode-config}/name"
-    );
+    networking.hostName = name;
   };
 }

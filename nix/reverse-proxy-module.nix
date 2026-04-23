@@ -6,85 +6,170 @@
 }:
 let
   cfg = config.services.xnode-reverse-proxy;
+  locations = lib.mkOption {
+    type = lib.types.listOf (
+      lib.types.oneOf [
+        (lib.types.addCheck (lib.types.submodule {
+          options = {
+            domain = lib.mkOption {
+              type = lib.types.str;
+              example = "app.container.internal";
+              description = ''
+                What domain to reach this location on.
+              '';
+            };
+
+            port = lib.mkOption {
+              type = lib.types.port;
+              example = 80;
+              description = ''
+                What port to reach this location on.
+              '';
+            };
+          };
+        }) (x: x ? domain && x ? port))
+
+        (lib.types.addCheck (lib.types.submodule {
+          options = {
+            socket = lib.mkOption {
+              type = lib.types.path;
+              example = "/run/xnode-manager/.socket";
+              description = ''
+                What socket to reach this location on.
+              '';
+            };
+          };
+        }) (x: x ? socket))
+      ]
+    );
+    description = ''
+      How to reach the location.
+    '';
+  };
+  http = lib.types.attrsOf (
+    lib.types.attrsOf (
+      lib.types.submodule {
+        options = {
+          inherit locations;
+          protocol = lib.mkOption {
+            type = lib.types.enum [
+              "http"
+              "https"
+            ];
+            default = "http";
+            example = "https";
+            description = ''
+              Protocol to use to communicate with the location.
+            '';
+          };
+          path = lib.mkOption {
+            type = lib.types.str;
+            default = "";
+            example = "/";
+            description = ''
+              What path prefix to use to communicate with the location. This will overwrite the path prefix on the domain.
+            '';
+          };
+        };
+      }
+    )
+  );
 in
 {
   options = {
     services.xnode-reverse-proxy = {
-      enable = lib.mkEnableOption "Enable Xnode Reverse Proxy.";
+      enable = lib.mkEnableOption "Xnode Reverse Proxy";
 
-      program = {
-        type = lib.mkOption {
-          type = lib.types.enum [
-            "nginx"
-            "cloudflared"
-          ];
-          default = "nginx";
-          example = "cloudflared";
-          description = ''
-            Reverse proxy program to use.
-          '';
+      http = lib.mkOption {
+        type = http;
+        default = { };
+        example = {
+          "xnode.local"."/".locations = [ { socket = "/run/xnode-home/.socket"; } ];
         };
+        description = ''
+          Http locations to expose.
+        '';
+      };
 
-        cloudflared = {
-          tunnel = {
-            name = lib.mkOption {
-              type = lib.types.str;
-              default = "xnode";
-              example = "MyXnode";
-              description = ''
-                Name of the tunnel to create and connect to in Cloudflare.
-              '';
+      https = lib.mkOption {
+        type = http;
+        default = { };
+        example = {
+          "openmesh.network"."/".locations = [
+            {
+              domain = "openmesh-landing-page.container.internal";
+              port = "3000";
+            }
+          ];
+          "xnode.openmesh.network" = {
+            "/" = {
+              protocol = "https";
+              locations = [
+                {
+                  domain = "server1.xnode.openmesh.network";
+                  port = "443";
+                }
+                {
+                  domain = "server2.xnode.openmesh.network";
+                  port = "443";
+                }
+                {
+                  domain = "server3.xnode.openmesh.network";
+                  port = "443";
+                }
+              ];
+            };
+            "/api" = {
+              locations = [
+                {
+                  socket = "/var/lib/xnode-manager/container/xnode-backend/data/run/xnode-backend/.socket";
+                }
+              ];
+              path = "/";
             };
           };
         };
+        description = ''
+          Https locations to expose.
+        '';
       };
 
-      rules = lib.mkOption {
+      tcp = lib.mkOption {
         type = lib.types.attrsOf (
-          lib.types.listOf (
-            lib.types.submodule {
-              options = {
-                forward = lib.mkOption {
-                  type = lib.types.str;
-                  example = "http://xnode.container:3000";
-                  description = ''
-                    Where to forward the request to.
-                  '';
-                };
-
-                path = lib.mkOption {
-                  type = lib.types.nullOr lib.types.str;
-                  default = null;
-                  example = "/page";
-                  description = ''
-                    Path of the incoming request.
-                  '';
-                };
-              };
-            }
-          )
+          lib.types.submodule {
+            options = {
+              inherit locations;
+            };
+          }
         );
         default = { };
         example = {
-          "example.com" = [
+          "25565".locations = [
             {
-              path = "/page1";
-              forward = "http://127.0.0.1:3001";
+              domain = "minecraft-server.container";
+              port = 25565;
             }
-            { forward = "http://127.0.0.1:3000"; }
-          ];
-          "test.example.com" = [
-            { forward = "https://test1.container:443"; }
-            { forward = "https://test2.container:443"; }
-          ];
-          "play.example.com" = [
-            { forward = "tcp://minecraft-server.container:25565"; }
-            { forward = "udp://minecraft-server.container:25565"; }
           ];
         };
-        description = ''
-          Rules to configure the reverse proxy forwarding.
-        '';
+      };
+
+      udp = lib.mkOption {
+        type = lib.types.attrsOf (
+          lib.types.submodule {
+            options = {
+              inherit locations;
+            };
+          }
+        );
+        default = { };
+        example = {
+          "25565".locations = [
+            {
+              domain = "minecraft-server.container";
+              port = 25565;
+            }
+          ];
+        };
       };
 
       certificates = lib.mkOption {
@@ -115,12 +200,27 @@ in
         '';
       };
 
+      cloudflared = {
+        enable = lib.mkEnableOption "expose through cloudflared";
+
+        tunnel = {
+          name = lib.mkOption {
+            type = lib.types.str;
+            default = "xnode";
+            example = "MyXnode";
+            description = ''
+              Name of the Cloudflare tunnel to create and connect to.
+            '';
+          };
+        };
+      };
+
       openFirewall = lib.mkOption {
         type = lib.types.bool;
         default = true;
         example = false;
         description = ''
-          Open required firewall ports for the reverse proxy to function.
+          Open required firewall ports for the reverse proxy to expose it's locations.
         '';
       };
     };
@@ -129,175 +229,141 @@ in
   config =
     let
       data = "/var/lib/xnode-reverse-proxy";
-      rules = builtins.mapAttrs (
-        domain: rule:
-        builtins.foldl'
-          (
-            acc: entry:
-            let
-              forward_split = lib.splitString "://" entry.forward;
-              protocol = builtins.elemAt forward_split 0;
-              server_split = lib.splitString ":" (builtins.elemAt forward_split 1);
-              server = builtins.elemAt server_split 0;
-              port = builtins.elemAt server_split 1;
-              parsedEntry = {
-                protocol = protocol;
-                server = server;
-                port = port;
-              };
-              http = protocol == "http" || protocol == "https";
-              path = if (entry.path == null) then "/" else entry.path;
-            in
-            {
-              http =
-                acc.http // (if http then { ${path} = (acc.http.${path} or [ ]) ++ [ parsedEntry ]; } else { });
-              stream = acc.stream ++ (if http then [ ] else [ parsedEntry ]);
-            }
-          )
-          {
-            http = { };
-            stream = [ ];
-          }
-          rule
-      ) cfg.rules;
     in
-    lib.mkIf cfg.enable {
-      users.groups.xnode-reverse-proxy = { };
-      users.users.xnode-reverse-proxy = {
-        isSystemUser = true;
-        group = "xnode-reverse-proxy";
-        home = data;
-        createHome = true;
-      };
+    lib.mkIf cfg.enable (
+      lib.mkMerge [
+        {
+          users.groups.xnode-reverse-proxy = { };
+          users.users.xnode-reverse-proxy = {
+            isSystemUser = true;
+            group = "xnode-reverse-proxy";
+            home = data;
+            createHome = true;
+          };
 
-      networking.firewall = lib.mkIf cfg.openFirewall (
-        if (cfg.program.type == "nginx") then
-          {
+          networking.firewall = lib.mkIf cfg.openFirewall {
             allowedTCPPorts = [
               80
               443
             ]
-            ++ (lib.attrsets.foldlAttrs (
-              acc: name: rule:
-              (
-                acc
-                ++ (builtins.map (entry: lib.toInt entry.port) (
-                  builtins.filter (entry: entry.protocol == "tcp") rule.stream
-                ))
-              )
-            ) [ ] rules);
-            allowedUDPPorts = (
-              lib.attrsets.foldlAttrs (
-                acc: name: rule:
-                (
-                  acc
-                  ++ (builtins.map (entry: lib.toInt entry.port) (
-                    builtins.filter (entry: entry.protocol == "udp") rule.stream
-                  ))
-                )
-              ) [ ] rules
-            );
-          }
-        else if (cfg.program.type == "cloudflared") then
-          { }
-        else
-          { }
-      );
+            ++ (builtins.map lib.toInt (builtins.attrNames cfg.tcp));
+            allowedUDPPorts = builtins.map lib.toInt (builtins.attrNames cfg.udp);
+          };
 
-      security.acme.certs = builtins.mapAttrs (name: value: {
-        domain = value.domain;
-        group = "xnode-reverse-proxy";
-        dnsProvider = "exec";
-        environmentFile =
-          let
-            dns-dir = "/var/lib/xnode-dns/acme";
-          in
-          pkgs.writeText "acme-env" "EXEC_PATH=${pkgs.writeScript "acme-dns-update.sh" ''
-            mode="$1"
-            record="$2"
-            token="$3"
+          services.nginx = {
+            enable = true;
+            user = "xnode-reverse-proxy";
+            group = "xnode-reverse-proxy";
 
-            if [ "$mode" = "present" ]; then
-                cat > ${dns-dir}/db.$record << EOL
-            $ORIGIN $record
-            @ 3600 IN SOA ${config.services.xnode-dns.soa.nameserver}. ${
-              builtins.replaceStrings [ "@" ] [ "." ] config.services.xnode-dns.soa.mailbox
-            }. $(date +"%y%d%m%H%M") ${config.services.xnode-dns.soa.refresh} ${config.services.xnode-dns.soa.retry} ${config.services.xnode-dns.soa.expire} ${config.services.xnode-dns.soa.minimumTTL}
-            @ IN 10 TXT "$token"
-            EOL
-                sleep 10s
-            else
-                rm ${dns-dir}/db.$record;
-            fi
-          ''}";
-        dnsPropagationCheck = false;
-      }) cfg.certificates;
+            recommendedOptimisation = true;
+            recommendedProxySettings = true;
+            recommendedTlsSettings = true;
+            recommendedGzipSettings = true;
+            resolver.addresses = [ "127.0.0.1" ];
+            appendConfig = ''
+              worker_processes auto;
+            '';
+            eventsConfig = ''
+              worker_connections 2048;
+            '';
 
-      services.nginx = {
-        enable = true;
-        user = "xnode-reverse-proxy";
-        group = "xnode-reverse-proxy";
-
-        recommendedOptimisation = true;
-        recommendedProxySettings = true;
-        recommendedTlsSettings = true;
-        recommendedGzipSettings = true;
-        resolver.addresses = [ "127.0.0.1" ];
-        appendConfig = ''
-          worker_processes auto;
-        '';
-        eventsConfig = ''
-          worker_connections 2048;
-        '';
-
-        upstreams = lib.attrsets.foldlAttrs (
-          upstreamAcc: domain: rule:
-          lib.mkMerge [
-            upstreamAcc
-            (lib.attrsets.foldlAttrs (
-              domainAcc: path: entries:
-              lib.mkMerge [
-                domainAcc
-                (
+            upstreams = lib.mkMerge (
+              (builtins.concatMap (
+                domain:
+                builtins.map (
+                  path:
                   let
-                    id = "${domain}_${builtins.replaceStrings [ "/" ] [ "<slash>" ] path}";
+                    id = "http_${domain}_${builtins.replaceStrings [ "/" ] [ "<slash>" ] path}";
+                    locations = cfg.http.${domain}.${path}.locations;
                   in
                   {
-                    # Forward slash characters cannot be escaped inside proxy pass
                     ${id} = {
                       servers = lib.mkMerge (
-                        builtins.map (entry: {
-                          "${entry.server}:${entry.port} resolve" = { };
-                        }) entries
+                        builtins.map (
+                          location:
+                          if location ? socket then
+                            { "unix:${location.socket}" = { }; }
+                          else
+                            {
+                              "${location.domain}:${builtins.toString location.port} resolve" = { };
+                            }
+                        ) locations
                       );
                       extraConfig = ''
                         zone ${id} 64k;
-                        keepalive ${builtins.toString (builtins.length entries)};
                       '';
                     };
                   }
-                )
-              ]
-            ) { } rule.http)
-          ]
-        ) { } rules;
+                ) (builtins.attrNames cfg.http.${domain})
+              ) (builtins.attrNames cfg.http))
+              ++ (builtins.concatMap (
+                domain:
+                builtins.map (
+                  path:
+                  let
+                    id = "https_${domain}_${builtins.replaceStrings [ "/" ] [ "<slash>" ] path}";
+                    locations = cfg.https.${domain}.${path}.locations;
+                  in
+                  {
+                    ${id} = {
+                      servers = lib.mkMerge (
+                        builtins.map (
+                          location:
+                          if location ? socket then
+                            { "unix:${location.socket}" = { }; }
+                          else
+                            {
+                              "${location.domain}:${location.port} resolve" = { };
+                            }
+                        ) locations
+                      );
+                      extraConfig = ''
+                        zone ${id} 64k;
+                      '';
+                    };
+                  }
+                ) (builtins.attrNames cfg.https.${domain})
+              ) (builtins.attrNames cfg.https))
+            );
 
-        virtualHosts = builtins.mapAttrs (
-          domain: rule:
-          lib.mkIf ((builtins.length (builtins.attrNames rule.http)) > 0) (
-            lib.mkMerge [
-              {
-                locations = builtins.mapAttrs (path: entries: {
-                  proxyWebsockets = true;
-                  proxyPass = "${(builtins.elemAt entries 0).protocol}://${domain}_${
-                    builtins.replaceStrings [ "/" ] [ "<slash>" ] path
-                  }"; # NGINX doesn't allow upstreams with different protocols
-                }) rule.http;
-              }
-              (lib.mkIf (cfg.program.type == "nginx") (
-                # NGINX is always used internally, only enable SSL in case it's the exposed reverse proxy service
-                {
+            virtualHosts = lib.mkMerge (
+              [
+                # {
+                #   "_" = {
+                #     default = true;
+                #     rejectSSL = true;
+                #     locations."/".return = "444";
+                #   };
+                # }
+              ]
+              ++ (builtins.map (domain: {
+                ${domain} = {
+                  locations = lib.mapAttrs (
+                    path: config:
+                    let
+                      id = "http_${domain}_${builtins.replaceStrings [ "/" ] [ "<slash>" ] path}";
+                    in
+                    {
+                      proxyWebsockets = true;
+                      proxyPass = "${config.protocol}://${id}${config.path}";
+                    }
+                  ) cfg.http.${domain};
+                };
+              }) (builtins.attrNames cfg.http))
+              ++ (builtins.map (domain: {
+                ${domain} = {
                   forceSSL = true;
+
+                  locations = lib.mapAttrs (
+                    path: config:
+                    let
+                      id = "https_${domain}_${builtins.replaceStrings [ "/" ] [ "<slash>" ] path}";
+                    in
+                    {
+                      proxyWebsockets = true;
+                      proxyPass = "${config.protocol}://${id}${config.path}";
+                    }
+                  ) cfg.https.${domain};
                 }
                 //
                   # Use existing acme if defined for this domain, otherwise generate it using enableACME
@@ -326,133 +392,162 @@ in
                           useACMEHost = acme.name;
                         }
                     )
-                  )
-              ))
-            ]
-          )
-        ) rules;
+                  );
+              }) (builtins.attrNames cfg.https))
+            );
 
-        streamConfig =
-          lib.attrsets.foldlAttrs
-            (
-              streamAcc: domain: rule:
-              (lib.mkMerge [
-                streamAcc
-                (
-                  let
-                    upstreams = builtins.foldl' (
-                      acc: entry:
-                      acc
-                      // {
-                        "${domain}_${entry.protocol}_${entry.port}" = {
-                          listen = "${entry.port}${if entry.protocol == "udp" then " udp" else ""}";
-                          servers = (acc."${domain}_${entry.protocol}_${entry.port}".servers or [ ]) ++ [
-                            "server ${entry.server}:${entry.port} resolve;"
-                          ];
-                        };
-                      }
-                    ) { } rule.stream;
-                  in
-                  lib.attrsets.foldlAttrs (
-                    serverAcc: upstream_name: upstream_value:
-                    lib.mkMerge [
-                      serverAcc
-                      ''
-                        upstream ${upstream_name} {
-                          zone ${upstream_name} 64k;
-                          ${builtins.concatStringsSep "\n" upstream_value.servers}
-                        }
+            streamConfig = builtins.concatStringsSep "\n" (
+              [
+                ''
+                  resolver 127.0.0.1;
+                ''
+              ]
+              ++ (builtins.map (
+                port:
+                let
+                  id = "tcp_${port}";
+                  locations = cfg.tcp.${port}.locations;
+                in
+                ''
+                  upstream ${id} {
+                    zone ${id} 64k;
+                    ${builtins.concatStringsSep "\n" (
+                      builtins.map (
+                        location:
+                        if location ? socket then
+                          "unix:${location.socket};"
+                        else
+                          "${location.domain}:${location.port} resolve;"
+                      ) locations
+                    )}
+                  }
 
-                        server {
-                          server_name ${domain};
-                          listen ${upstream_value.listen};
-                          proxy_pass ${upstream_name};
-                        }
-                      ''
-                    ]
-                  ) "" upstreams
-                )
-              ])
-            )
-            ''
-              resolver 127.0.0.1;
-            ''
-            rules;
-      };
+                  server {
+                    listen ${port};
+                    proxy_pass ${id};
+                  }
+                ''
+              ) (builtins.attrNames cfg.tcp))
+              ++ (builtins.map (
+                port:
+                let
+                  id = "udp_${port}";
+                  locations = cfg.udp.${port}.locations;
+                in
+                ''
+                  upstream ${id} {
+                    zone ${id} 64k;
+                    ${builtins.concatStringsSep "\n" (
+                      builtins.map (
+                        location:
+                        if location ? socket then
+                          "unix:${location.socket};"
+                        else
+                          "${location.domain}:${location.port} resolve;"
+                      ) locations
+                    )}
+                  }
 
-      systemd.services.cloudflared-login = lib.mkIf (cfg.program.type == "cloudflared") {
-        wantedBy = [ "multi-user.target" ];
-        description = "Authenticate cloudflared with your account.";
-        wants = [ "network-online.target" ];
-        after = [ "network-online.target" ];
-        serviceConfig = {
-          User = "xnode-reverse-proxy";
-          Group = "xnode-reverse-proxy";
-          Restart = "on-failure";
-        };
-        script = ''
-          ${lib.getExe pkgs.cloudflared} tunnel login
-        '';
-      };
+                  server {
+                    listen ${port} udp reuseport;
+                    proxy_pass ${id};
+                  }
+                ''
+              ) (builtins.attrNames cfg.udp))
+            );
+          };
 
-      systemd.paths.cloudflared-tunnel-xnode-create = lib.mkIf (cfg.program.type == "cloudflared") {
-        wantedBy = [ "multi-user.target" ];
-        wants = [ "network-online.target" ];
-        after = [ "network-online.target" ];
-        pathConfig = {
-          PathChanged = "${data}/.cloudflared/cert.pem";
-          Unit = "cloudflared-tunnel-xnode-create.service";
-        };
-      };
-      systemd.services.cloudflared-tunnel-xnode-create = lib.mkIf (cfg.program.type == "cloudflared") {
-        description = "Create locally managed xnode tunnel.";
-        serviceConfig = {
-          User = "xnode-reverse-proxy";
-          Group = "xnode-reverse-proxy";
-          Restart = "on-failure";
-        };
-        script = ''
-          ${lib.getExe pkgs.cloudflared} tunnel create "${cfg.program.cloudflared.tunnel.name}"
-          for f in ${data}/.cloudflared/*.json ; do mv "$f" "${data}/.cloudflared/tunnel.json"; done
-        '';
-      };
+          security.acme.certs = builtins.mapAttrs (name: value: {
+            domain = value.domain;
+            group = "xnode-reverse-proxy";
+            dnsProvider = "exec";
+            environmentFile =
+              let
+                dns-dir = "/var/lib/xnode-dns/acme";
+              in
+              pkgs.writeText "acme-env" "EXEC_PATH=${pkgs.writeScript "acme-dns-update.sh" ''
+                mode="$1"
+                record="$2"
+                token="$3"
 
-      systemd.paths.cloudflared-tunnel-xnode = lib.mkIf (cfg.program.type == "cloudflared") {
-        wantedBy = [ "multi-user.target" ];
-        wants = [ "network-online.target" ];
-        after = [ "network-online.target" ];
-        pathConfig = {
-          PathExists = "${data}/.cloudflared/tunnel.json";
-          Unit = "cloudflared-tunnel-xnode.service";
-        };
-      };
-      systemd.services.cloudflared-tunnel-xnode = lib.mkIf (cfg.program.type == "cloudflared") ({
-        wantedBy = lib.mkForce [ ];
-        serviceConfig.User = lib.mkForce "xnode-reverse-proxy";
-        serviceConfig.Group = lib.mkForce "xnode-reverse-proxy";
-        serviceConfig.DynamicUser = lib.mkForce false;
-      });
-      services.cloudflared = lib.mkIf (cfg.program.type == "cloudflared") {
-        enable = true;
-        tunnels."xnode" = {
-          credentialsFile = "${data}/.cloudflared/tunnel.json";
-          default = "http://127.0.0.1"; # Query NGINX http
-          ingress = lib.attrsets.foldlAttrs (
-            acc: domain: rule:
-            (lib.mkMerge [
-              acc
-              (lib.mkMerge (
-                lib.lists.imap0 (i: entry: {
-                  ${domain} = {
-                    # hostname = name;
-                    service = "${entry.protocol}://127.0.0.1:${entry.port}"; # Query NGINX stream
-                  };
-                }) rule.stream
-              ))
-            ])
-          ) { } rules;
+                if [ "$mode" = "present" ]; then
+                    cat > ${dns-dir}/db.$record << EOL
+                $ORIGIN $record
+                @ 3600 IN SOA ${config.services.xnode-dns.soa.nameserver}. ${
+                  builtins.replaceStrings [ "@" ] [ "." ] config.services.xnode-dns.soa.mailbox
+                }. $(date +"%y%d%m%H%M") ${config.services.xnode-dns.soa.refresh} ${config.services.xnode-dns.soa.retry} ${config.services.xnode-dns.soa.expire} ${config.services.xnode-dns.soa.minimumTTL}
+                @ IN 10 TXT "$token"
+                EOL
+                    sleep 10s
+                else
+                    rm ${dns-dir}/db.$record;
+                fi
+              ''}";
+            dnsPropagationCheck = false;
+          }) cfg.certificates;
+        }
+        (lib.mkIf cfg.cloudflared.enable {
+          systemd.services.cloudflared-login = {
+            wantedBy = [ "multi-user.target" ];
+            description = "Authenticate cloudflared with your account.";
+            wants = [ "network-online.target" ];
+            after = [ "network-online.target" ];
+            serviceConfig = {
+              User = "xnode-reverse-proxy";
+              Group = "xnode-reverse-proxy";
+              Restart = "on-failure";
+            };
+            script = ''
+              ${lib.getExe pkgs.cloudflared} tunnel login
+            '';
+          };
 
-        };
-      };
-    };
+          systemd.paths.cloudflared-tunnel-xnode-create = {
+            wantedBy = [ "multi-user.target" ];
+            wants = [ "network-online.target" ];
+            after = [ "network-online.target" ];
+            pathConfig = {
+              PathChanged = "${data}/.cloudflared/cert.pem";
+              Unit = "cloudflared-tunnel-xnode-create.service";
+            };
+          };
+          systemd.services.cloudflared-tunnel-xnode-create = {
+            description = "Create locally managed xnode tunnel.";
+            serviceConfig = {
+              User = "xnode-reverse-proxy";
+              Group = "xnode-reverse-proxy";
+              Restart = "on-failure";
+            };
+            script = ''
+              ${lib.getExe pkgs.cloudflared} tunnel create "${cfg.cloudflared.tunnel.name}"
+              for f in ${data}/.cloudflared/*.json ; do mv "$f" "${data}/.cloudflared/tunnel.json"; done
+            '';
+          };
+
+          systemd.paths.cloudflared-tunnel-xnode = {
+            wantedBy = [ "multi-user.target" ];
+            wants = [ "network-online.target" ];
+            after = [ "network-online.target" ];
+            pathConfig = {
+              PathExists = "${data}/.cloudflared/tunnel.json";
+              Unit = "cloudflared-tunnel-xnode.service";
+            };
+          };
+          systemd.services.cloudflared-tunnel-xnode = {
+            wantedBy = lib.mkForce [ ];
+            serviceConfig.User = lib.mkForce "xnode-reverse-proxy";
+            serviceConfig.Group = lib.mkForce "xnode-reverse-proxy";
+            serviceConfig.DynamicUser = lib.mkForce false;
+          };
+          services.cloudflared = {
+            enable = true;
+            tunnels."xnode" = {
+              credentialsFile = "${data}/.cloudflared/tunnel.json";
+              default = "https://127.0.0.1"; # Forward to NGINX
+              originRequest.noTLSVerify = true; # Allow self-signed certificates
+            };
+          };
+        })
+      ]
+    );
 }

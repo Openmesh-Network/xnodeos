@@ -89,61 +89,65 @@ in
     let
       acme-dir = "/var/lib/xnode-dns/acme";
     in
-    lib.mkIf cfg.enable {
-      users.groups.xnode-dns = { };
-      users.users.xnode-dns = {
-        isSystemUser = true;
-        group = "xnode-dns";
-        home = "/var/lib/xnode-dns";
-        createHome = true;
-      };
+    lib.mkIf cfg.enable (
+      lib.mkMerge [
+        {
+          users.groups.xnode-dns = { };
+          users.users.xnode-dns = {
+            isSystemUser = true;
+            group = "xnode-dns";
+            home = "/var/lib/xnode-dns";
+            createHome = true;
+          };
 
-      services.resolved = {
-        enable = true;
-        settings.Resolve = {
-          DNSStubListener = "no";
-          DNSStubListenerExtra = "127.0.0.1:5352";
-        };
-      };
+          services.resolved = {
+            enable = true;
+            settings.Resolve = {
+              DNSStubListener = "no";
+              DNSStubListenerExtra = "127.0.0.1:5352";
+            };
+          };
 
-      services.coredns = {
-        enable = true;
-        config = ''
-          . {
-            auto {
-              directory ${acme-dir}
-              reload 10s
-            }
-            forward . 127.0.0.1:5352
-          }
+          services.coredns = {
+            enable = true;
+            config = ''
+              . {
+                auto {
+                  directory ${acme-dir}
+                  reload 10s
+                }
+                forward . 127.0.0.1:5352
+              }
 
-          internal. {
-            acl {
-              allow net 127.0.0.1 ::1
-              block
-            }
-            rewrite name suffix .internal. . answer auto
-            forward . 127.0.0.1:5352
-          }
-        '';
-      };
-      systemd.services.coredns.serviceConfig = {
-        User = "xnode-dns";
-        Group = "xnode-dns";
-        DynamicUser = lib.mkForce false;
-      };
+              internal. {
+                acl {
+                  allow net 127.0.0.1 ::1
+                  block
+                }
+                rewrite name suffix .internal. . answer auto
+                forward . 127.0.0.1:5352
+              }
+            '';
+          };
+          systemd.services.coredns.serviceConfig = {
+            User = "xnode-dns";
+            Group = "xnode-dns";
+            DynamicUser = lib.mkForce false;
+          };
 
-      systemd.tmpfiles.rules = [
-        "d ${acme-dir} - - - - -"
-        "A ${acme-dir} - - - - g:xnode-reverse-proxy:rw"
-      ];
+          systemd.tmpfiles.rules = [
+            "d ${acme-dir} - - - - -"
+            "A ${acme-dir} - - - - g:xnode-reverse-proxy:rw"
+          ];
 
-      networking.firewall.allowedUDPPorts = lib.mkIf cfg.openFirewall [ 53 ];
-    }
-    // (lib.mkIf cfg.mdns.enable {
-      services.resolved.settings.Resolve."MulticastDNS" = "yes";
-      systemd.network.networks."89-ethernet".networkConfig."MulticastDNS" = "yes";
-      systemd.network.networks."80-wifi-station".networkConfig."MulticastDNS" = "yes";
-      networking.firewall.allowedUDPPorts = lib.mkIf cfg.mdns.openFirewall [ 5353 ];
-    });
+          networking.firewall.allowedUDPPorts = lib.mkIf cfg.openFirewall [ 53 ];
+        }
+        (lib.mkIf cfg.mdns.enable {
+          services.resolved.settings.Resolve."MulticastDNS" = "yes";
+          systemd.network.networks."89-ethernet".networkConfig."MulticastDNS" = "yes";
+          systemd.network.networks."80-wifi-station".networkConfig."MulticastDNS" = "yes";
+          networking.firewall.allowedUDPPorts = lib.mkIf cfg.mdns.openFirewall [ 5353 ];
+        })
+      ]
+    );
 }

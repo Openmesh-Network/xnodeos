@@ -18,6 +18,9 @@
         automatic = true;
         dates = "daily";
       };
+
+      daemonCPUSchedPolicy = "idle";
+      daemonIOSchedClass = "idle";
     };
 
     systemd.timers.nix-gc.timerConfig.RandomizedOffsetSec = "24h";
