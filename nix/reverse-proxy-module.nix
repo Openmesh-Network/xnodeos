@@ -151,6 +151,9 @@ in
             }
           ];
         };
+        description = ''
+          TCP locations to expose.
+        '';
       };
 
       udp = lib.mkOption {
@@ -170,6 +173,9 @@ in
             }
           ];
         };
+        description = ''
+          UDP locations to expose.
+        '';
       };
 
       certificates = lib.mkOption {

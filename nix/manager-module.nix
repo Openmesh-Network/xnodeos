@@ -1,7 +1,66 @@
 {
+  config,
   lib,
   ...
 }:
+let
+  location = lib.mkOption {
+    type = lib.types.oneOf [
+      (lib.types.addCheck (lib.types.submodule {
+        options = {
+          port = lib.mkOption {
+            type = lib.types.port;
+            example = 80;
+            description = ''
+              What port to reach this location on.
+            '';
+          };
+        };
+      }) (x: x ? port))
+
+      (lib.types.addCheck (lib.types.submodule {
+        options = {
+          socket = lib.mkOption {
+            type = lib.types.path;
+            example = "/run/xnode-manager/.socket";
+            description = ''
+              What socket to reach this location on.
+            '';
+          };
+        };
+      }) (x: x ? socket))
+    ];
+    description = ''
+      How to reach the location.
+    '';
+  };
+  http = lib.types.attrsOf (
+    lib.types.submodule {
+      options = {
+        inherit location;
+        protocol = lib.mkOption {
+          type = lib.types.enum [
+            "http"
+            "https"
+          ];
+          default = "http";
+          example = "https";
+          description = ''
+            Protocol to use to communicate with the location.
+          '';
+        };
+        path = lib.mkOption {
+          type = lib.types.str;
+          default = "";
+          example = "/";
+          description = ''
+            What path prefix to use to communicate with the location. This will overwrite the path prefix on the domain.
+          '';
+        };
+      };
+    }
+  );
+in
 {
   options = {
     xnode.manager = {
@@ -347,161 +406,94 @@
         '';
       };
 
-      expose = lib.mkOption {
-        type = lib.types.attrsOf (
-          lib.types.submodule {
-            options = {
-              protocol = lib.mkOption {
-                type = lib.types.enum [
-                  "http"
-                  "https"
-                ];
-                example = "http";
-                description = ''
-                  What protocol to use to communicate with this endpoint.
-                '';
-              };
-
-              location = lib.mkOption {
-                type = lib.types.enum [
-                  (lib.types.submodule {
-                    options = {
-                      port = lib.mkOption {
-                        type = lib.types.port;
-                        example = 80;
-                        description = ''
-                          What port this endpoint is reachable under.
-                        '';
-                      };
-                    };
-                  })
-                ];
-                example = {
-                  port = 80;
-                };
-                description = ''
-                  The location of this endpoint.
-                '';
-              };
-
-              path = {
-                expose = lib.mkOption {
-                  type = lib.types.str;
-                  default = "/";
-                  example = "/api";
-                  description = ''
-                    The path this endpoint should be exposed under.
-                  '';
-                };
-
-                location = lib.mkOption {
-                  type = lib.types.str;
-                  default = "";
-                  example = "/";
-                  description = ''
-                    The base path to use for the location.
-                  '';
-                };
-              };
-
-              description = lib.mkOption {
-                type = lib.types.str;
-                description = ''
-                  Additional information for the user.
-                '';
-              };
-            };
-          }
-        );
-        default = { };
-        example = {
-          frontend = {
-            protocol = "http";
-            location = {
-              port = 3000;
-            };
-          };
-          api = {
-            protocol = "http";
-            location = {
-              port = 3001;
-            };
-            path.expose = "/api";
-          };
-          admin = {
-            protocol = "http";
-            location = {
-              port = 5000;
-            };
-            path = {
-              expose = "/admin";
-              location = "/"; # Replace `/admin` with `/` in the location request.
-            };
-          };
+      expose = {
+        subdomain = lib.mkOption {
+          type = lib.types.str;
+          default = config.networking.hostName;
+          example = "my-app";
+          description = ''
+            Recommended subdomain for xnode-manager to expose http(s) under.
+          '';
         };
-        description = ''
-          Recommended access for xnode-manager to expose.
-        '';
+
+        http = lib.mkOption {
+          type = http;
+          default = { };
+          example = {
+            "/" = {
+              protocol = "https";
+              location = {
+                port = 443;
+              };
+            };
+            "/api" = {
+              location = {
+                socket = "/run/my-app/.socket";
+              };
+              path = "/";
+            };
+          };
+          description = ''
+            Recommended http(s) locations for xnode-manager to expose.
+          '';
+        };
+
+        tcp = lib.mkOption {
+          type = lib.types.attrsOf (
+            lib.types.submodule {
+              options = {
+                inherit location;
+              };
+            }
+          );
+          default = { };
+          example = {
+            "53".location = {
+              port = 53;
+            };
+          };
+          description = ''
+            Recommended tcp locations for xnode-manager to expose.
+          '';
+        };
+
+        udp = lib.mkOption {
+          type = lib.types.attrsOf (
+            lib.types.submodule {
+              options = {
+                inherit location;
+              };
+            }
+          );
+          default = { };
+          example = {
+            "53".location = {
+              port = 53;
+            };
+          };
+          description = ''
+            Recommended udp locations for xnode-manager to expose.
+          '';
+        };
       };
 
       ui = lib.mkOption {
-        type = lib.types.attrsOf (
-          lib.types.submodule {
-            options = {
-              protocol = lib.mkOption {
-                type = lib.types.enum [
-                  "http"
-                  "https"
-                ];
-                example = "http";
-                description = ''
-                  What protocol to use to communicate with this UI.
-                '';
-              };
-
-              location = lib.mkOption {
-                type = lib.types.enum [
-                  (lib.types.submodule {
-                    options = {
-                      port = lib.mkOption {
-                        type = lib.types.port;
-                        example = 80;
-                        description = ''
-                          What port this UI is reachable under.
-                        '';
-                      };
-                    };
-                  })
-                ];
-                example = {
-                  port = 80;
-                };
-                description = ''
-                  The location of this UI.
-                '';
-              };
-
-              description = lib.mkOption {
-                type = lib.types.str;
-                description = ''
-                  Additional information for the user.
-                '';
-              };
-            };
-          }
-        );
+        type = http;
         default = { };
         example = {
           config = {
-            protocol = "http";
             location = {
               port = 3000;
             };
           };
           dashboard = {
-            protocol = "http";
             location = {
               port = 3001;
+            };
+          };
+          debug = {
+            location = {
+              socket = "/run/my-app/debug.socket";
             };
           };
         };
