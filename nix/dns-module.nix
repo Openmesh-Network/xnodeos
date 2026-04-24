@@ -142,12 +142,36 @@ in
 
           networking.firewall.allowedUDPPorts = lib.mkIf cfg.openFirewall [ 53 ];
         }
-        (lib.mkIf cfg.mdns.enable {
-          services.resolved.settings.Resolve."MulticastDNS" = "yes";
-          systemd.network.networks."89-ethernet".networkConfig."MulticastDNS" = "yes";
-          systemd.network.networks."80-wifi-station".networkConfig."MulticastDNS" = "yes";
-          networking.firewall.allowedUDPPorts = lib.mkIf cfg.mdns.openFirewall [ 5353 ];
-        })
+        (
+          let
+            mdns-domains = lib.filterAttrs (
+              domain: settings: lib.strings.hasSuffix ".local" domain
+            ) config.services.xnode-reverse-proxy.http;
+            dnssd = builtins.map (domain: lib.strings.removeSuffix ".local" domain) (
+              builtins.attrNames mdns-domains
+            );
+          in
+          lib.mkIf cfg.mdns.enable {
+            services.resolved.settings.Resolve."MulticastDNS" = "yes";
+            systemd.network.networks."89-ethernet".networkConfig."MulticastDNS" = "yes";
+            systemd.network.networks."80-wifi-station".networkConfig."MulticastDNS" = "yes";
+            networking.firewall.allowedUDPPorts = lib.mkIf cfg.mdns.openFirewall [ 5353 ];
+
+            environment.etc = lib.mkMerge (
+              builtins.map (item: {
+                "systemd/dnssd/${item}.dnssd".text = ''
+                  [Service]
+                  Name=${item}
+                  Type=_http._tcp
+                  Port=80
+                '';
+              }) dnssd
+            );
+            systemd.services.systemd-resolved.reloadTriggers = builtins.map (
+              item: config.environment.etc."systemd/dnssd/${item}.dnssd".source
+            ) dnssd;
+          }
+        )
       ]
     );
 }

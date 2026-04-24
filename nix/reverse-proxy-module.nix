@@ -339,13 +339,13 @@ in
               ++ (builtins.map (domain: {
                 ${domain} = {
                   locations = lib.mapAttrs (
-                    path: config:
+                    path: settings:
                     let
                       id = "http_${domain}_${builtins.replaceStrings [ "/" ] [ "<slash>" ] path}";
                     in
                     {
                       proxyWebsockets = true;
-                      proxyPass = "${config.protocol}://${id}${config.path}";
+                      proxyPass = "${settings.protocol}://${id}${settings.path}";
                     }
                   ) cfg.http.${domain};
                 };
