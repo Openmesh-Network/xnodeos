@@ -27,6 +27,7 @@ in
       useDHCP = false;
       useNetworkd = true;
       nftables.enable = true;
+      firewall.allowedUDPPorts = [ 5355 ];
     };
     systemd.network = {
       enable = true;
@@ -39,9 +40,13 @@ in
           matchConfig = {
             Kind = "veth";
             Name = "host0";
+            Virtualization = "container";
           };
           networkConfig = {
             DHCP = "yes";
+            LinkLocalAddressing = "yes";
+            LLDP = "yes";
+            EmitLLDP = "customer-bridge";
           };
           dhcpV4Config.UseDNS = false;
           dhcpV6Config.UseDNS = false;

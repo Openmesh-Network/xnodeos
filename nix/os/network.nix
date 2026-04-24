@@ -41,9 +41,18 @@ in
         };
         nftables.enable = true;
         firewall = {
-          interfaces."ns-*".allowedUDPPorts = [ 67 ];
-          interfaces."ve-*".allowedUDPPorts = [ 67 ];
-          interfaces."vt-*".allowedUDPPorts = [ 67 ];
+          interfaces."ns-*".allowedUDPPorts = [
+            67
+            5355
+          ];
+          interfaces."ve-*".allowedUDPPorts = [
+            67
+            5355
+          ];
+          interfaces."vt-*".allowedUDPPorts = [
+            67
+            5355
+          ];
         };
       };
 
@@ -105,11 +114,12 @@ in
               RequiredForOnline = "no";
             };
             networkConfig = {
-              Address = "0.0.0.0/29";
+              Address = "0.0.0.0/28";
+              LinkLocalAddressing = "yes";
               DHCPServer = "yes";
               IPMasquerade = "both";
-              LLDP = "no";
-              EmitLLDP = "no";
+              LLDP = "yes";
+              EmitLLDP = "customer-bridge";
               IPv6AcceptRA = "no";
               IPv6SendRA = "yes";
             };
@@ -127,11 +137,12 @@ in
               RequiredForOnline = "no";
             };
             networkConfig = {
-              Address = "0.0.0.0/29";
+              Address = "0.0.0.0/28";
+              LinkLocalAddressing = "yes";
               DHCPServer = "yes";
               IPMasquerade = "both";
-              LLDP = "no";
-              EmitLLDP = "no";
+              LLDP = "yes";
+              EmitLLDP = "customer-bridge";
               IPv6AcceptRA = "no";
               IPv6SendRA = "yes";
             };
@@ -149,11 +160,12 @@ in
               RequiredForOnline = "no";
             };
             networkConfig = {
-              Address = "0.0.0.0/29";
+              Address = "0.0.0.0/28";
+              LinkLocalAddressing = "yes";
               DHCPServer = "yes";
               IPMasquerade = "both";
-              LLDP = "no";
-              EmitLLDP = "no";
+              LLDP = "yes";
+              EmitLLDP = "customer-bridge";
               IPv6AcceptRA = "no";
               IPv6SendRA = "yes";
             };
