@@ -256,6 +256,63 @@ in
             allowedUDPPorts = builtins.map lib.toInt (builtins.attrNames cfg.udp);
           };
 
+          systemd =
+            let
+              sockets = builtins.map (location: location.socket) (
+                builtins.filter (location: location ? socket) (
+                  builtins.concatMap (settings: settings.locations) (
+                    builtins.concatLists [
+                      (builtins.concatMap (paths: builtins.attrValues paths) (builtins.attrValues cfg.http))
+                      (builtins.concatMap (paths: builtins.attrValues paths) (builtins.attrValues cfg.https))
+                      (builtins.attrValues cfg.tcp)
+                      (builtins.attrValues cfg.udp)
+                    ]
+                  )
+                )
+              );
+            in
+            {
+              paths = builtins.listToAttrs (
+                builtins.map (socket: {
+                  name = "xnode-reverse-proxy-socket${builtins.replaceStrings [ "/" ] [ "-" ] socket}";
+                  value = {
+                    wantedBy = [ "paths.target" ];
+                    description = "Watch for changes to socket ${socket}.";
+                    pathConfig = {
+                      PathChanged = socket;
+                    };
+                  };
+                }) sockets
+              );
+              services = builtins.listToAttrs (
+                builtins.map (socket: {
+                  name = "xnode-reverse-proxy-socket${builtins.replaceStrings [ "/" ] [ "-" ] socket}";
+                  value = {
+                    description = "Allow the xnode-reverse-proxy group access to socket ${socket}";
+                    serviceConfig = {
+                      Type = "oneshot";
+                    };
+                    script = ''
+                      if [ -S "${socket}" ]; then
+                        dir="${socket}"
+                        while [ "$dir" != "/" ]; do
+                            # Grant execute permission to be able to traverse all directories up to the socket
+                            dir=$(dirname "$dir")
+                            echo "Granting x on $dir"
+                            ${lib.getExe' pkgs.acl "setfacl"} --modify group:xnode-reverse-proxy:x "$dir"
+                        done
+
+                        echo "Granting rw on ${socket}"
+                        ${lib.getExe' pkgs.acl "setfacl"} --modify group:xnode-reverse-proxy:rw "${socket}"
+                      else
+                        echo "Socket doesn't exist, ignoring..."
+                      fi
+                    '';
+                  };
+                }) sockets
+              );
+            };
+
           services.nginx = {
             enable = true;
             user = "xnode-reverse-proxy";

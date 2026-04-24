@@ -22,9 +22,10 @@ let
         options = {
           socket = lib.mkOption {
             type = lib.types.path;
-            example = "/run/xnode-manager/.socket";
+            example = "/var/run/xnode-app/.socket";
             description = ''
               What socket to reach this location on.
+              This has to be in a directory reachable from outside of the container (tmpfs isn't). 
             '';
           };
         };
