@@ -328,13 +328,13 @@ in
 
             virtualHosts = lib.mkMerge (
               [
-                # {
-                #   "_" = {
-                #     default = true;
-                #     rejectSSL = true;
-                #     locations."/".return = "444";
-                #   };
-                # }
+                {
+                  "_" = {
+                    default = true;
+                    rejectSSL = true;
+                    locations."/".return = "444";
+                  };
+                }
               ]
               ++ (builtins.map (domain: {
                 ${domain} = {

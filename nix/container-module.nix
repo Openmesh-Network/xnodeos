@@ -21,6 +21,8 @@ in
       else
         { isContainer = true; };
 
+    nix.settings.sandbox = false;
+
     networking = {
       useDHCP = false;
       useNetworkd = true;

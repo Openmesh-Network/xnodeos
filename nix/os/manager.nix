@@ -51,7 +51,6 @@ in
                 imports = [ inputs.self.nixosModules.app ];
 
                 config = {
-                  nix.settings.sandbox = false;
                   xnode = {
                     xnode-config = pkgs.emptyDirectory;
                     container.enable = args.lib.mkForce true;
