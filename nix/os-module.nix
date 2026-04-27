@@ -5,6 +5,7 @@
 }:
 {
   imports = [
+    ./first-install.nix
     ./xnode-config.nix
     ./nix-settings.nix
     ./os/base.nix

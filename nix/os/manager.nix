@@ -41,28 +41,30 @@ in
 
     services.xnode-manager = {
       enable = true;
-      buildBase =
-        (lib.nixosSystem {
-          inherit pkgs;
-          modules = [
-            (
-              { pkgs, ... }@args:
-              {
-                imports = [ inputs.self.nixosModules.app ];
+      buildBase = {
+        container =
+          (lib.nixosSystem {
+            inherit pkgs;
+            modules = [
+              (
+                { pkgs, ... }@args:
+                {
+                  imports = [ inputs.self.nixosModules.app ];
 
-                config = {
-                  xnode = {
-                    xnode-config = pkgs.emptyDirectory;
-                    container.enable = args.lib.mkForce true;
-                    auto-update.enable = args.lib.mkForce false;
-                    pin-state-version.enable = args.lib.mkForce false;
+                  config = {
+                    xnode = {
+                      xnode-config = pkgs.emptyDirectory;
+                      container.enable = args.lib.mkForce true;
+                      auto-update.enable = args.lib.mkForce false;
+                      pin-state-version.enable = args.lib.mkForce false;
+                    };
+                    system.stateVersion = args.config.system.nixos.release;
                   };
-                  system.stateVersion = args.config.system.nixos.release;
-                };
-              }
-            )
-          ];
-        }).config.system.build.toplevel.outPath;
+                }
+              )
+            ];
+          }).config.system.build.toplevel.outPath;
+      };
     };
 
     services.xnode-dns = {

@@ -16,11 +16,38 @@ in
   };
 
   config = lib.mkIf cfg.container.enable {
-    boot =
-      if builtins.hasAttr "isNspawnContainer" options.boot then
-        { isNspawnContainer = true; }
-      else
-        { isContainer = true; };
+    system.boot.loader.id = "xnode-boot-container";
+    boot = lib.mkMerge [
+      (
+        if builtins.hasAttr "isNspawnContainer" options.boot then
+          { isNspawnContainer = true; }
+        else
+          { isContainer = true; }
+      )
+      {
+        loader.external = {
+          enable = true;
+          installHook = "${lib.getExe (
+            pkgs.writeShellApplication {
+              name = "xnode-boot-container";
+              runtimeInputs = [
+                pkgs.coreutils
+              ];
+              text =
+                let
+                  root = config.xnode.root;
+                in
+                ''
+                  toplevel="$1"
+                  mkdir -p /sbin
+                  cp "$toplevel/init" /sbin/init
+                  mv "${root}/new-result" "${root}/result" --no-target-directory
+                '';
+            }
+          )}";
+        };
+      }
+    ];
 
     # https://github.com/NixOS/nixpkgs/issues/405256
     systemd.services.nix-daemon.serviceConfig.ExecStart = [

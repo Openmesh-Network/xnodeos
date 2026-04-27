@@ -196,6 +196,16 @@ in
               ''
                 rm -rf "$tmp"
               ''
+
+              # Update result symlink
+              (
+                let
+                  root = config.xnode.root;
+                in
+                ''
+                  mv "${root}/new-result" "${root}/result" --no-target-directory
+                ''
+              )
             ];
         }
       )}";

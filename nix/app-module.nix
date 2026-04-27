@@ -12,6 +12,7 @@ let
 in
 {
   imports = [
+    ./first-install.nix
     ./xnode-config.nix
     ./nix-settings.nix
     ./manager-module.nix

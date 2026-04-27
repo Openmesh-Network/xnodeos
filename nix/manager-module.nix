@@ -393,7 +393,6 @@ in
               "--network-veth"
               "--private-users=managed"
               "--private-users-ownership=foreign"
-              "--private-users-delegate=1"
             ];
           };
           virtual-machine = {

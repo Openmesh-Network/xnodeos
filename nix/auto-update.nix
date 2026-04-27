@@ -70,7 +70,6 @@ in
       script =
         let
           nix = lib.getExe cfg.package.nix;
-          mv = lib.getExe' cfg.package.coreutils "mv";
           systemctl = lib.getExe' cfg.package.systemd "systemctl";
         in
         ''
@@ -80,9 +79,7 @@ in
 
           REBOOT=${if cfg.reboot == "always" then "true" else "false"}
 
-          ${mv} "${cfg.root}/new-result" "${cfg.root}/result" --no-target-directory
-
-          "${cfg.root}/result/bin/switch-to-configuration" switch
+          "${cfg.root}/new-result/bin/switch-to-configuration" switch
 
           if [[ $REBOOT == true ]]; then
             ${systemctl} reboot

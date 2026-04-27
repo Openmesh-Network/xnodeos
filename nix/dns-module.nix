@@ -100,9 +100,12 @@ in
             createHome = true;
           };
 
+          networking.nameservers = [ "127.0.0.1" ];
+
           services.resolved = {
             enable = true;
             settings.Resolve = {
+              DNS = [ ]; # Prevent resolved from copying networking.nameservers
               DNSStubListener = "no";
               DNSStubListenerExtra = "127.0.0.1:5352";
             };

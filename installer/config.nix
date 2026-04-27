@@ -135,7 +135,7 @@
     };
 
     programs = {
-      command-not-found.enable = lib.mkDefault false;
+      command-not-found.enable = lib.mkForce false;
       fish.generateCompletions = lib.mkDefault false;
     };
 

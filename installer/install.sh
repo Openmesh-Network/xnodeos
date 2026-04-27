@@ -27,7 +27,7 @@ sbctl create-keys
 
 # Attempt to enroll the Secure Boot Keys
 # This will only work if setup mode was enabled before running the installer
-sbctl enroll-keys || true
+sbctl enroll-keys || echo "Failed to enroll secure boot keys"
 
 # Detect if system contains TPM
 TPM=$(cat /sys/class/tpm/tpm0/tpm_version_major) || TPM=""
@@ -117,17 +117,10 @@ cp -r /var/lib/sbctl /mnt/var/lib
 cp -r /var/lib/systemd /mnt/var/lib
 
 # Build configuration
-nix build /mnt/var/lib/xnode-manager/host/config#nixosConfigurations.xnode.config.system.build.toplevel --store /mnt --out-link /mnt/var/lib/xnode-manager/host/result --extra-substituters auto?trusted=1
+nix build /mnt/var/lib/xnode-manager/host/config#nixosConfigurations.xnode.config.system.build.toplevel --store /mnt --out-link /mnt/var/lib/xnode-manager/host/new-result --extra-substituters auto?trusted=1
 
 # Apply configuration
-systemd-firstboot --root /mnt --setup-machine-id
-systemd-run --pipe --root-directory /mnt /var/lib/xnode-manager/host/result/sw/bin/bash -c "$(cat << EOL
-set -e
-/var/lib/xnode-manager/host/result/activate || true
-/var/lib/xnode-manager/host/result/sw/bin/systemd-tmpfiles --create --remove -E || true
-NIXOS_INSTALL_BOOTLOADER=1 /var/lib/xnode-manager/host/result/bin/switch-to-configuration boot
-EOL
-)"
+systemd-run --pipe --collect --property Type=oneshot --root-directory /mnt /var/lib/xnode-manager/host/new-result/first-install
 
 # Boot into new OS
 if [ -z "$DEBUG" ]; then
