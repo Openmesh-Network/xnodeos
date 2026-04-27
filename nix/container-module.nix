@@ -1,6 +1,7 @@
 {
   config,
   options,
+  pkgs,
   lib,
   ...
 }:
@@ -21,7 +22,14 @@ in
       else
         { isContainer = true; };
 
-    nix.settings.sandbox = false;
+    # https://github.com/NixOS/nixpkgs/issues/405256
+    systemd.services.nix-daemon.serviceConfig.ExecStart = [
+      ""
+      "${lib.getExe' pkgs.util-linux "unshare"} -m ${pkgs.writeShellScript "start-nix-daemon" ''
+        ${lib.getExe' pkgs.util-linux "mount"} -t proc proc /proc
+        exec -a nix-daemon ${lib.getExe' config.nix.package.out "nix-daemon"} --daemon
+      ''}"
+    ];
 
     networking = {
       useDHCP = false;
