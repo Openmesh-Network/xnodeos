@@ -43,7 +43,7 @@ cp /etc/xnodeos-config-file /var/lib/xnode-manager/host/config/flake.nix
 cp /etc/xnodeos-config-lock /var/lib/xnode-manager/host/config/flake.lock
 if [[ $VERSION == "latest" ]]; then
   # Lock to major version only
-  sed -i -e 's|"github:Openmesh-Network/xnodeos/v([0-9]+)\.[0-9]+\.[0-9]+"|"github:Openmesh-Network/xnodeos/v\1"|g' /var/lib/xnode-manager/host/config/flake.nix
+  sed -i -E 's|"github:Openmesh-Network/xnodeos/v([0-9]+)\.[0-9]+\.[0-9]+"|"github:Openmesh-Network/xnodeos/v\1"|g' /var/lib/xnode-manager/host/config/flake.nix
 fi
 
 # Apply environmental variable configuration
@@ -120,7 +120,8 @@ cp -r /var/lib/systemd /mnt/var/lib
 nix build /mnt/var/lib/xnode-manager/host/config#nixosConfigurations.xnode.config.system.build.toplevel --store /mnt --out-link /mnt/var/lib/xnode-manager/host/new-result --extra-substituters auto?trusted=1
 
 # Apply configuration
-systemd-run --pipe --collect --property Type=oneshot --root-directory /mnt /var/lib/xnode-manager/host/new-result/first-install
+systemd-firstboot --root /mnt --setup-machine-id
+systemd-run --pipe --quiet --collect --property Type=oneshot --root-directory /mnt /var/lib/xnode-manager/host/new-result/first-install 2>&1
 
 # Boot into new OS
 if [ -z "$DEBUG" ]; then

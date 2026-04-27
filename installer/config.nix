@@ -7,6 +7,18 @@
 }:
 {
   config = {
+    nixpkgs.overlays = [
+      (final: prev: {
+        nixos-facter = prev.nixos-facter.overrideAttrs (old: {
+          postPatch = (old.postPatch or "") + ''
+            substituteInPlace pkg/udev/udev.go \
+              --replace 'return nil, fmt.Errorf("failed to parse bus: %w", err)' \
+                        '/* Unknown bus (e.g. "acpi"), ignore instead of failing */'
+          '';
+        });
+      })
+    ];
+
     services.getty.greetingLine = ''<<< Welcome to Openmesh XnodeOS Installer ${config.system.nixos.label} (\m) - \l >>>'';
     services.getty.autologinUser = lib.mkForce "root";
 
