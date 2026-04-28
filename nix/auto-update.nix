@@ -73,18 +73,36 @@ in
         let
           nix = lib.getExe cfg.package.nix;
           systemctl = lib.getExe' cfg.package.systemd "systemctl";
+          readlink = lib.getExe' pkgs.coreutils "readlink";
         in
         ''
           ${nix} flake update --flake "${cfg.root}/config"
 
           ${nix} build "${cfg.root}/config#nixosConfigurations.xnode.config.system.build.toplevel" --out-link "${cfg.root}/new-result"
 
-          REBOOT=${if cfg.reboot == "always" then "true" else "false"}
-
-          "${cfg.root}/new-result/bin/switch-to-configuration" switch
+          ${
+            if cfg.reboot == "always" then
+              "REBOOT=true"
+            else if cfg.reboot == "never" then
+              "REBOOT=false"
+            else
+              # https://github.com/NixOS/nixpkgs/blob/nixos-unstable/nixos/modules/tasks/auto-upgrade.nix
+              ''
+                booted="$(${readlink} /run/booted-system/{initrd,kernel,kernel-modules})"
+                built="$(${readlink} /new-result/{initrd,kernel,kernel-modules})"
+                if [ "$booted" = "$built" ]; then
+                  REBOOT=false
+                else
+                  REBOOT=true
+                fi
+              ''
+          }
 
           if [[ $REBOOT == true ]]; then
+            "${cfg.root}/new-result/bin/switch-to-configuration" boot
             ${systemctl} reboot
+          else
+            "${cfg.root}/new-result/bin/switch-to-configuration" switch
           fi
         '';
     };
