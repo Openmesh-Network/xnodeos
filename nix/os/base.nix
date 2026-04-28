@@ -1,6 +1,8 @@
 { config, pkgs, ... }:
 {
   config = {
+    system.nixos.distroName = "Openmesh XnodeOS";
+
     users.mutableUsers = false; # Prevent non-declarative users
     users.allowNoPasswordLogin = true; # Allow a system without any users that can be logged into
 
@@ -8,11 +10,12 @@
     services.fwupd.enable = true; # Allow applications to update firmware
     services.dbus.implementation = "broker"; # High performance and reliability implementation of D-Bus
 
-    # Change greeting to XnodeOS + ip address
-    services.getty.greetingLine = ''
-      <<< Welcome to Openmesh XnodeOS ${config.system.nixos.label} (\m) - \l >>>
-      Access remotely through: \4 \6
-    '';
+    services.getty = {
+      helpLine = ''Access remotely: \4 \6'';
+      extraArgs = [
+        "--issue-file=/etc/issue"
+      ];
+    };
 
     # Update limits
     boot.kernel.sysctl = {
