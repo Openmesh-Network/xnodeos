@@ -60,6 +60,8 @@ in
 
     systemd.services.auto-update = {
       description = "Update, rebuild, and apply this NixOS system.";
+      after = [ "network-online.target" ];
+      wants = [ "network-online.target" ];
       restartIfChanged = false;
       serviceConfig = {
         Type = "oneshot";

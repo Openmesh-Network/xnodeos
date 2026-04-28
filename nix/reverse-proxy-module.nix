@@ -566,9 +566,7 @@ in
           };
 
           systemd.paths.cloudflared-tunnel-xnode-create = {
-            wantedBy = [ "multi-user.target" ];
-            wants = [ "network-online.target" ];
-            after = [ "network-online.target" ];
+            wantedBy = [ "paths.target" ];
             pathConfig = {
               PathChanged = "${data}/.cloudflared/cert.pem";
               Unit = "cloudflared-tunnel-xnode-create.service";
@@ -576,6 +574,8 @@ in
           };
           systemd.services.cloudflared-tunnel-xnode-create = {
             description = "Create locally managed xnode tunnel.";
+            wants = [ "network-online.target" ];
+            after = [ "network-online.target" ];
             serviceConfig = {
               User = "xnode-reverse-proxy";
               Group = "xnode-reverse-proxy";
@@ -588,9 +588,7 @@ in
           };
 
           systemd.paths.cloudflared-tunnel-xnode = {
-            wantedBy = [ "multi-user.target" ];
-            wants = [ "network-online.target" ];
-            after = [ "network-online.target" ];
+            wantedBy = [ "paths.target" ];
             pathConfig = {
               PathExists = "${data}/.cloudflared/tunnel.json";
               Unit = "cloudflared-tunnel-xnode.service";
