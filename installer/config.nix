@@ -19,7 +19,10 @@
       })
     ];
 
-    services.getty.greetingLine = ''<<< Welcome to Openmesh XnodeOS Installer ${config.system.nixos.label} (\m) - \l >>>'';
+    system.nixos.distroName = "Openmesh XnodeOS Installer";
+    services.getty.extraArgs = [
+      "--issue-file=/etc/issue"
+    ];
     services.getty.autologinUser = lib.mkForce "root";
 
     nix =

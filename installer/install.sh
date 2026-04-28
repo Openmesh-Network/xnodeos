@@ -121,7 +121,7 @@ nix build /mnt/var/lib/xnode-manager/host/config#nixosConfigurations.xnode.confi
 
 # Apply configuration
 systemd-firstboot --root /mnt --setup-machine-id
-systemd-run --pipe --quiet --collect --property Type=oneshot --root-directory /mnt /var/lib/xnode-manager/host/new-result/first-install 2>&1
+systemd-run --pty --quiet --collect --service-type oneshot --root-directory /mnt /var/lib/xnode-manager/host/new-result/first-install
 
 # Boot into new OS
 if [ -z "$DEBUG" ]; then
