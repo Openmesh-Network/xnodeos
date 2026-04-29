@@ -89,7 +89,7 @@ in
               # https://github.com/NixOS/nixpkgs/blob/nixos-unstable/nixos/modules/tasks/auto-upgrade.nix
               ''
                 booted="$(${readlink} /run/booted-system/{initrd,kernel,kernel-modules})"
-                built="$(${readlink} /new-result/{initrd,kernel,kernel-modules})"
+                built="$(${readlink} ${cfg.root}/new-result/{initrd,kernel,kernel-modules})"
                 if [ "$booted" = "$built" ]; then
                   REBOOT=false
                 else
