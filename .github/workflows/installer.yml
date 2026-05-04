@@ -17,7 +17,7 @@ jobs:
       matrix:
         runner:
           - ubuntu-24.04
-          # - ubuntu-24.04-arm
+          - ubuntu-24.04-arm
 
     permissions:
       contents: write
@@ -33,6 +33,9 @@ jobs:
 
       - name: Use config from branch
         run: sed -i -e "s|\"github:Openmesh-Network/xnodeos\"|\"github:Openmesh-Network/xnodeos/${BRANCH_NAME}\"|g" ./config/flake.nix
+
+      - name: Set system
+        run: sed -i "s/x86_64/$(uname -m)/" ./config/xnode-config/hardware
 
       - name: Build config
         run: nix build ./config#nixosConfigurations.xnode.config.system.build.toplevel --accept-flake-config

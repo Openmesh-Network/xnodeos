@@ -9,6 +9,7 @@
         ];
         flake-registry = "";
         accept-flake-config = true;
+        keep-outputs = true; # Significantly speed up updates at the cost of more disk usage
       };
 
       optimise.automatic = true;

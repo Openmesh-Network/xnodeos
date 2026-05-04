@@ -15,7 +15,7 @@ jobs:
       matrix:
         runner:
           - ubuntu-24.04
-          # - ubuntu-24.04-arm
+          - ubuntu-24.04-arm
 
     steps:
       - name: Checkout code
@@ -34,6 +34,9 @@ jobs:
 
       - name: Use config from branch
         run: sed -i -e "s|\"github:Openmesh-Network/xnodeos\"|\"github:Openmesh-Network/xnodeos/${BRANCH_NAME}\"|g" ./config/flake.nix
+
+      - name: Set system
+        run: sed -i "s/x86_64/$(uname -m)/" ./config/xnode-config/hardware
 
       - name: Upload XnodeOS default config to Cachix
         run: nix build ./config#nixosConfigurations.xnode.config.system.build.toplevel --accept-flake-config --print-out-paths --fallback | cachix push openmesh
