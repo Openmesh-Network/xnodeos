@@ -32,10 +32,10 @@
 
   outputs = inputs: {
     nixosModules = {
-      default = import ./nix/os-module.nix { inherit inputs; };
-      app = ./nix/app-module.nix;
-      dns = ./nix/dns-module.nix;
-      reverse-proxy = ./nix/reverse-proxy-module.nix;
+      default = import ./nix/os.nix { inherit inputs; };
+      app = import ./nix/app.nix { inherit inputs; };
+      dns = ./nix/dns.nix;
+      reverse-proxy = ./nix/reverse-proxy.nix;
     };
   };
 }

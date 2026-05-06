@@ -67,27 +67,19 @@ in
       };
     };
 
-    services.xnode-dns = {
-      enable = true;
-      soa.nameserver = if (domain != "") then domain else "xnode.local";
-    };
-
-    services.xnode-reverse-proxy = {
-      enable = true;
-      https = builtins.listToAttrs (
-        builtins.map
-          (domain: {
-            name = domain;
-            value."/".locations = [
-              { socket = config.services.xnode-manager.socket; }
-            ];
-          })
-          (
-            [ "manager.xnode.local" ]
-            ++ (lib.optionals (domain != "" && domain != "xnode.local") [ "manager.${domain}" ])
-          )
-      );
-    };
+    services.xnode-reverse-proxy.https = builtins.listToAttrs (
+      builtins.map
+        (domain: {
+          name = domain;
+          value."/".locations = [
+            { socket = config.services.xnode-manager.socket; }
+          ];
+        })
+        (
+          [ "manager.xnode.local" ]
+          ++ (lib.optionals (domain != "" && domain != "xnode.local") [ "manager.${domain}" ])
+        )
+    );
 
     services.xnode-auth = {
       enable = true;

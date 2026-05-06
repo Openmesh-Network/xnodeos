@@ -1,3 +1,4 @@
+{ inputs }:
 {
   config,
   ...
@@ -15,12 +16,17 @@ in
     ./first-install.nix
     ./xnode-config.nix
     ./nix-settings.nix
-    ./manager-module.nix
+    ./manager.nix
     ./state-version.nix
     ./name.nix
     ./auto-update.nix
+    ./yggdrasil.nix
 
-    ./container-module.nix
+    inputs.self.nixosModules.dns
+    inputs.self.nixosModules.reverse-proxy
+    inputs.xnode-auth.nixosModules.default
+
+    ./container.nix
   ];
 
   config = {
@@ -31,6 +37,11 @@ in
       auto-update.enable = true;
       pin-state-version.enable = true;
     };
+
+    services.xnode-yggdrasil.enable = true;
+    services.xnode-dns.enable = true;
+    services.xnode-reverse-proxy.enable = true;
+    services.xnode-auth.enable = true;
 
     boot.initrd.systemd.enable = true;
     nixpkgs.hostPlatform =

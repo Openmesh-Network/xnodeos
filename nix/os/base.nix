@@ -11,7 +11,7 @@
     services.dbus.implementation = "broker"; # High performance and reliability implementation of D-Bus
 
     services.getty = {
-      helpLine = ''Access remotely: \4 \6'';
+      helpLine = ''Access Remotely: \4 \6 \6{ygg0}'';
       extraArgs = [
         "--issue-file=/etc/issue"
       ];

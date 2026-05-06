@@ -1,5 +1,4 @@
 {
-  config,
   lib,
   ...
 }:
@@ -35,32 +34,6 @@ let
       How to reach the location.
     '';
   };
-  http = lib.types.attrsOf (
-    lib.types.submodule {
-      options = {
-        inherit location;
-        protocol = lib.mkOption {
-          type = lib.types.enum [
-            "http"
-            "https"
-          ];
-          default = "http";
-          example = "https";
-          description = ''
-            Protocol to use to communicate with the location.
-          '';
-        };
-        path = lib.mkOption {
-          type = lib.types.str;
-          default = "";
-          example = "/";
-          description = ''
-            What path prefix to use to communicate with the location. This will overwrite the path prefix on the domain.
-          '';
-        };
-      };
-    }
-  );
 in
 {
   options = {
@@ -406,79 +379,35 @@ in
         '';
       };
 
-      expose = {
-        subdomain = lib.mkOption {
-          type = lib.types.str;
-          default = config.networking.hostName;
-          example = "my-app";
-          description = ''
-            Recommended subdomain for xnode-manager to expose http(s) under.
-          '';
-        };
-
-        http = lib.mkOption {
-          type = http;
-          default = { };
-          example = {
-            "/" = {
-              protocol = "https";
-              location = {
-                port = 443;
-              };
-            };
-            "/api" = {
-              location = {
-                socket = "/run/my-app/.socket";
-              };
-              path = "/";
-            };
-          };
-          description = ''
-            Recommended http(s) locations for xnode-manager to expose.
-          '';
-        };
-
-        tcp = lib.mkOption {
-          type = lib.types.attrsOf (
-            lib.types.submodule {
-              options = {
-                inherit location;
-              };
-            }
-          );
-          default = { };
-          example = {
-            "53".location = {
-              port = 53;
-            };
-          };
-          description = ''
-            Recommended tcp locations for xnode-manager to expose.
-          '';
-        };
-
-        udp = lib.mkOption {
-          type = lib.types.attrsOf (
-            lib.types.submodule {
-              options = {
-                inherit location;
-              };
-            }
-          );
-          default = { };
-          example = {
-            "53".location = {
-              port = 53;
-            };
-          };
-          description = ''
-            Recommended udp locations for xnode-manager to expose.
-          '';
-        };
-      };
-
       ui = lib.mkOption {
-        type = http;
+        type = lib.types.attrsOf (
+          lib.types.submodule {
+            options = {
+              inherit location;
+
+              protocol = lib.mkOption {
+                type = lib.types.enum [
+                  "http"
+                  "https"
+                ];
+                default = "http";
+                example = "https";
+                description = ''
+                  Protocol to use to communicate with the location.
+                '';
+              };
+
+              path = lib.mkOption {
+                type = lib.types.str;
+                default = "";
+                example = "/";
+                description = ''
+                  What path prefix to use to communicate with the location. This will overwrite the path prefix on the domain.
+                '';
+              };
+            };
+          }
+        );
         default = { };
         example = {
           config = {
