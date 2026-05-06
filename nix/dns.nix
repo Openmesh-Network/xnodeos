@@ -1,5 +1,6 @@
 {
   config,
+  pkgs,
   lib,
   ...
 }:
@@ -56,6 +57,16 @@ in
         };
 
         networking.nameservers = [ "127.0.0.1" ];
+        system.nssDatabases.hosts = lib.mkForce [
+          "files"
+          "dns"
+          "resolve"
+        ];
+        environment.etc."resolv.conf".source = lib.mkForce (
+          pkgs.writeText "resolv.conf" ''
+            nameserver 127.0.0.1
+          ''
+        );
 
         services.resolved = {
           enable = true;
