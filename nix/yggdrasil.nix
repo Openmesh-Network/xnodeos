@@ -10,7 +10,9 @@ in
 {
   options = {
     services.xnode-yggdrasil = {
-      enable = lib.mkEnableOption "Xnode Yggdrasil";
+      enable = lib.mkEnableOption "Xnode Yggdrasil" // {
+        default = true;
+      };
 
       multicast = {
         enable = lib.mkEnableOption "Xnode Yggdrasil Multicast" // {

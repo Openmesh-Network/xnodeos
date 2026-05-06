@@ -10,7 +10,9 @@ in
 {
   options = {
     xnode.auto-update = {
-      enable = lib.mkEnableOption "automated system updates";
+      enable = lib.mkEnableOption "automated system updates" // {
+        default = true;
+      };
 
       package = {
         nix = lib.mkPackageOption pkgs "nix" { } // {

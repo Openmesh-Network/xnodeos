@@ -80,7 +80,9 @@ in
 {
   options = {
     services.xnode-reverse-proxy = {
-      enable = lib.mkEnableOption "Xnode Reverse Proxy";
+      enable = lib.mkEnableOption "Xnode Reverse Proxy" // {
+        default = cfg.http != { } || cfg.https != { } || cfg.tcp != { } || cfg.udp != { };
+      };
 
       http = lib.mkOption {
         type = http;

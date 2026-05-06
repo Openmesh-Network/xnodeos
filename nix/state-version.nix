@@ -11,7 +11,9 @@ in
 {
   options = {
     xnode.pin-state-version = {
-      enable = lib.mkEnableOption "automatic state version pinning";
+      enable = lib.mkEnableOption "automatic state version pinning" // {
+        default = true;
+      };
 
       xnode-config = lib.mkOption {
         type = lib.types.str;

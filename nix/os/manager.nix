@@ -55,10 +55,11 @@ in
                     xnode = {
                       xnode-config = pkgs.emptyDirectory;
                       container.enable = args.lib.mkForce true;
-                      auto-update.enable = args.lib.mkForce false;
-                      pin-state-version.enable = args.lib.mkForce false;
+                      auto-update.enable = false;
+                      pin-state-version.enable = false;
                     };
                     system.stateVersion = args.config.system.nixos.release;
+                    nixpkgs.hostPlatform = args.lib.mkForce pkgs.stdenv.hostPlatform.system;
                   };
                 }
               )
@@ -82,7 +83,6 @@ in
     );
 
     services.xnode-auth = {
-      enable = true;
       domains = lib.mkIf (owner != "") (
         builtins.listToAttrs (
           builtins.map

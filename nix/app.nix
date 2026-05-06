@@ -32,16 +32,7 @@ in
   config = {
     xnode.container.enable = type == "container";
 
-    xnode = {
-      root = "/";
-      auto-update.enable = true;
-      pin-state-version.enable = true;
-    };
-
-    services.xnode-yggdrasil.enable = true;
-    services.xnode-dns.enable = true;
-    services.xnode-reverse-proxy.enable = true;
-    services.xnode-auth.enable = true;
+    xnode.root = "/";
 
     boot.initrd.systemd.enable = true;
     nixpkgs.hostPlatform =

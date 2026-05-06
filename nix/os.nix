@@ -23,18 +23,9 @@
   ];
 
   config = {
-    xnode = {
-      root = "/var/lib/xnode-manager/host";
-      auto-update.enable = true;
-      pin-state-version.enable = true;
-    };
+    xnode.root = "/var/lib/xnode-manager/host";
 
-    services.xnode-yggdrasil.enable = true;
     services.xnode-yggdrasil.proxy.enable = true;
     services.yggdrasil.settings.Peers = [ "tls://peer.yggdrasil.openmesh.cloud:9003" ];
-
-    services.xnode-dns.enable = true;
-    services.xnode-reverse-proxy.enable = true;
-    services.xnode-auth.enable = true;
   };
 }

@@ -10,7 +10,9 @@ in
 {
   options = {
     services.xnode-dns = {
-      enable = lib.mkEnableOption "Xnode DNS";
+      enable = lib.mkEnableOption "Xnode DNS" // {
+        default = true;
+      };
 
       mdns = {
         enable = lib.mkEnableOption "Xnode Multicast DNS";
@@ -29,7 +31,7 @@ in
         type = lib.types.lines;
         default = "";
         example = ''
-          directdns yggdrasil.trustless.cloud.
+          debug
         '';
         description = ''
           Extra config to add to root block of coredns.
