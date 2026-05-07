@@ -6,6 +6,11 @@
 }:
 let
   cfg = config.services.xnode-reverse-proxy;
+  email =
+    if (builtins.pathExists "${config.xnode.xnode-config}/email") then
+      builtins.readFile "${config.xnode.xnode-config}/email"
+    else
+      "";
   locations = lib.mkOption {
     type = lib.types.listOf (
       lib.types.oneOf [
@@ -265,6 +270,11 @@ in
           }) sockets
         );
       };
+
+    security.acme = {
+      acceptTerms = true;
+      defaults.email = if (email != "") then email else "xnode@openmesh.network";
+    };
 
     services.nginx = {
       enable = true;

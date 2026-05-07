@@ -17,11 +17,6 @@ let
       builtins.readFile "${cfg.xnode-config}/domain"
     else
       "";
-  email =
-    if (builtins.pathExists "${cfg.xnode-config}/email") then
-      builtins.readFile "${cfg.xnode-config}/email"
-    else
-      "";
 in
 {
   imports = [
@@ -32,10 +27,6 @@ in
   ];
 
   config = {
-    security.acme = {
-      acceptTerms = true;
-      defaults.email = if (email != "") then email else "xnode@openmesh.network";
-    };
     systemd.services."acme-order-renew-manager.xnode.local".script =
       lib.mkForce ''echo "selfsigned only"'';
 
