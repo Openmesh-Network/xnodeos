@@ -65,17 +65,8 @@ in
         services.yggdrasil = {
           enable = true;
           persistentKeys = true;
-          openMulticastPort = lib.mkIf cfg.multicast.enable true;
           settings = {
             IfName = "ygg0";
-            MulticastInterfaces = lib.mkIf cfg.multicast.enable [
-              {
-                "Regex" = "^(en.*|eth.*|wl.*)$";
-                "Beacon" = true;
-                "Listen" = true;
-                "Port" = cfg.multicast.port;
-              }
-            ];
           };
         };
 
@@ -93,11 +84,11 @@ in
               {
                 name = "directdns_me";
                 repo = "github.com/plopmenz/coredns-directdns-me";
-                version = "ac24f9e84fb28c678d0c7c1f78c2e9beb183c33a";
+                version = "fce83ec96931c48cd205bbbd084bf44daf26d293";
                 position.before = "directdns";
               }
             ];
-            vendorHash = "sha256-Q/SYulcZc2j1lhgC6W9HA0FqaghvKdIhLGKRbl25NJs=";
+            vendorHash = "sha256-JXBPKjmChlh5E8WoW4G2tR2A/qnl8u3SKAQVQFMSV0A=";
           }).overrideAttrs
             (old: {
               doCheck = false;
@@ -107,8 +98,23 @@ in
           directdns yggdrasil.trustless.cloud
         '';
 
-        networking.firewall.allowedTCPPorts = lib.mkIf cfg.multicast.enable [ cfg.multicast.port ];
       }
+      (lib.mkIf cfg.multicast.enable {
+        services.yggdrasil = {
+          openMulticastPort = true;
+          settings = {
+            MulticastInterfaces = lib.mkIf cfg.multicast.enable [
+              {
+                "Regex" = "^(en.*|wl.*|host.*|ns.*|ve-.*|vt-.*)$";
+                "Beacon" = true;
+                "Listen" = true;
+                "Port" = cfg.multicast.port;
+              }
+            ];
+          };
+        };
+        networking.firewall.allowedTCPPorts = [ cfg.multicast.port ];
+      })
       (lib.mkIf cfg.peer.enable {
         services.yggdrasil.settings.Listen = [
           "${cfg.peer.protocol}://0.0.0.0:${builtins.toString cfg.peer.port}"

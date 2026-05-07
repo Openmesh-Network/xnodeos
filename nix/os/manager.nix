@@ -82,31 +82,29 @@ in
         )
     );
 
-    services.xnode-auth = {
-      domains = lib.mkIf (owner != "") (
-        builtins.listToAttrs (
-          builtins.map
-            (domain: {
-              name = domain;
-              value = {
-                accessList = {
-                  users = {
-                    "${owner}" = {
-                      roles = [ "owner" ];
-                    };
-                  };
-                  roles = {
-                    "owner" = { };
+    services.xnode-auth.domains = lib.mkIf (owner != "") (
+      builtins.listToAttrs (
+        builtins.map
+          (domain: {
+            name = domain;
+            value = {
+              accessList = {
+                users = {
+                  ${owner} = {
+                    roles = [ "owner" ];
                   };
                 };
+                roles = {
+                  "owner" = { };
+                };
               };
-            })
-            (
-              [ "manager.xnode.local" ]
-              ++ (lib.optionals (domain != "" && domain != "xnode.local") [ "manager.${domain}" ])
-            )
-        )
-      );
-    };
+            };
+          })
+          (
+            [ "manager.xnode.local" ]
+            ++ (lib.optionals (domain != "" && domain != "xnode.local") [ "manager.${domain}" ])
+          )
+      )
+    );
   };
 }
