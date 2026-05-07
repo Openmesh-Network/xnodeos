@@ -80,11 +80,11 @@
         "systems": "systems"
       },
       "locked": {
-        "lastModified": 1778092162,
-        "narHash": "sha256-+BNkOPogHNtix8lJfce9MqqqPtKTqduLwZT5eQoM6/g=",
+        "lastModified": 1778175778,
+        "narHash": "sha256-lx0OShfNnf4hIaIJ9e53JjUnG5EF6vYeoJwjbkW1yVs=",
         "owner": "Openmesh-Network",
         "repo": "xnode-auth",
-        "rev": "dad7f0f6f6f0d04c8b166412ab6c2ac43dfe1196",
+        "rev": "d378c69e73536f6b96183429b76a99c0125a16cd",
         "type": "github"
       },
       "original": {
