@@ -67,6 +67,9 @@ in
           persistentKeys = true;
           settings = {
             IfName = "ygg0";
+            NodeInfo."xnode" = {
+              "domains" = builtins.attrNames config.services.xnode-reverse-proxy.https;
+            };
           };
         };
 
