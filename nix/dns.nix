@@ -27,14 +27,44 @@ in
         };
       };
 
-      extraConfig = lib.mkOption {
-        type = lib.types.lines;
-        default = "";
-        example = ''
-          debug
-        '';
+      zones = lib.mkOption {
+        type = lib.types.attrsOf (
+          lib.types.submodule (
+            { name, ... }:
+            {
+              options = {
+                domain = lib.mkOption {
+                  type = lib.types.str;
+                  default = name;
+                  example = "";
+                  description = ''
+                    FQDN filter for this zone.
+                  '';
+                };
+
+                plugins = lib.mkOption {
+                  type = lib.types.lines;
+                  default = "";
+                  example = ''
+                    plugin1 arg1
+                    plugin2 arg1 arg2 arg3
+                  '';
+                  description = ''
+                    Plugin chain for this zone.
+                  '';
+                };
+              };
+            }
+          )
+        );
+        default = { };
+        example = {
+          "." = ''
+            forward . 1.1.1.1
+          '';
+        };
         description = ''
-          Extra config to add to root block of coredns.
+          DNS serving configuration / plugin chain.
         '';
       };
 
@@ -79,14 +109,20 @@ in
           };
         };
 
+        services.xnode-dns.zones.".".plugins = ''
+          cache
+          forward . 127.0.0.1:5352
+        '';
+
         services.coredns = {
           enable = true;
-          config = ''
-            . {
-              ${cfg.extraConfig}
-              forward . 127.0.0.1:5352
-            }
-          '';
+          config = builtins.concatStringsSep "\n" (
+            builtins.map (zone: ''
+              ${cfg.zones.${zone}.domain} {
+                ${cfg.zones.${zone}.plugins}
+              }
+            '') (builtins.attrNames cfg.zones)
+          );
         };
         systemd.services.coredns.serviceConfig = {
           User = "xnode-dns";

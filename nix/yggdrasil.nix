@@ -79,24 +79,24 @@ in
           (pkgs.coredns.override {
             externalPlugins = [
               {
-                name = "directdns";
-                repo = "github.com/Plopmenz/coredns-directdns";
-                version = "b8064d0b21c35d8ad514c4aa81738976a8e49b52";
+                name = "directdns_me";
+                repo = "github.com/plopmenz/coredns-directdns-me";
+                version = "22fd9a4268745995ed2c3263b12fd0fe2f5f8ed7";
                 position.before = "forward";
               }
               {
-                name = "directdns_me";
-                repo = "github.com/plopmenz/coredns-directdns-me";
-                version = "fce83ec96931c48cd205bbbd084bf44daf26d293";
-                position.before = "directdns";
+                name = "directdns";
+                repo = "github.com/Plopmenz/coredns-directdns";
+                version = "b8064d0b21c35d8ad514c4aa81738976a8e49b52";
+                position.after = "directdns_me";
               }
             ];
-            vendorHash = "sha256-JXBPKjmChlh5E8WoW4G2tR2A/qnl8u3SKAQVQFMSV0A=";
+            vendorHash = "sha256-N+qiI/hxBBzb4PGDR9gluII96lZAtwv4qGEmgxBqK4Y=";
           }).overrideAttrs
             (old: {
               doCheck = false;
             });
-        services.xnode-dns.extraConfig = ''
+        services.xnode-dns.zones.".".plugins = ''
           directdns_me yggdrasil.trustless.cloud
           directdns yggdrasil.trustless.cloud
         '';
