@@ -5,11 +5,11 @@
   ...
 }:
 let
-  cfg = config.services.xnode-yggdrasil;
+  cfg = config.xnode.yggdrasil;
 in
 {
   options = {
-    services.xnode-yggdrasil = {
+    xnode.yggdrasil = {
       enable = lib.mkEnableOption "Xnode Yggdrasil" // {
         default = true;
       };
@@ -56,6 +56,19 @@ in
           '';
         };
       };
+
+      public-dns = {
+        enable = lib.mkEnableOption "Xnode Yggdrasil Public DNS";
+
+        domain = lib.mkOption {
+          type = lib.types.str;
+          default = "yggdrasil.trustless.cloud";
+          example = "example.com";
+          description = ''
+            Port for allowing inbound peering connections. 
+          '';
+        };
+      };
     };
   };
 
@@ -68,7 +81,7 @@ in
           settings = {
             IfName = "ygg0";
             NodeInfo."xnode" = {
-              "domains" = builtins.attrNames config.services.xnode-reverse-proxy.https;
+              "domains" = builtins.attrNames config.xnode.reverse-proxy.https;
             };
           };
         };
@@ -96,7 +109,7 @@ in
             (old: {
               doCheck = false;
             });
-        services.xnode-dns.zones.".".plugins = ''
+        xnode.dns.zones.".".plugins = ''
           directdns_me yggdrasil.trustless.cloud
           directdns yggdrasil.trustless.cloud
         '';
@@ -137,7 +150,7 @@ in
         networking.firewall.allowedTCPPorts = [ 443 ];
         services.nginx.streamConfig =
           let
-            domains = builtins.attrNames config.services.xnode-reverse-proxy.https;
+            domains = builtins.attrNames config.xnode.reverse-proxy.https;
           in
           ''
             map $ssl_preread_server_name $backend {
@@ -159,6 +172,21 @@ in
               ssl_preread on;
             }
           '';
+      })
+      (lib.mkIf cfg.public-dns.enable {
+        xnode.dns.zones.${cfg.public-dns.domain}.plugins = ''
+          cache
+
+          rewrite {
+              # Add _public_dns. prefix to the root domain
+              name regex ^([^.]+)\.yggdrasil\.trustless\.cloud\.$ _public_dns.{1}.${cfg.public-dns.domain}.
+
+              # Remove _public_dns. prefix
+              answer name ^_public_dns\.(.*)\.yggdrasil\.trustless\.cloud\.$ {1}.${cfg.public-dns.domain}.
+          }
+
+          directdns ${cfg.public-dns.domain}
+        '';
       })
     ]
   );

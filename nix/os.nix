@@ -25,7 +25,7 @@
   config = {
     xnode.root = "/var/lib/xnode-manager/host";
 
-    services.xnode-yggdrasil.proxy.enable = true;
+    xnode.yggdrasil.proxy.enable = true;
     services.yggdrasil.settings.Peers = [ "tls://peer.yggdrasil.openmesh.cloud:9003" ];
     services.yggdrasil-jumper.enable = true;
   };

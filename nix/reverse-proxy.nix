@@ -5,7 +5,7 @@
   ...
 }:
 let
-  cfg = config.services.xnode-reverse-proxy;
+  cfg = config.xnode.reverse-proxy;
   email =
     if (builtins.pathExists "${config.xnode.xnode-config}/email") then
       builtins.readFile "${config.xnode.xnode-config}/email"
@@ -84,7 +84,7 @@ let
 in
 {
   options = {
-    services.xnode-reverse-proxy = {
+    xnode.reverse-proxy = {
       enable = lib.mkEnableOption "Xnode Reverse Proxy" // {
         default = cfg.http != { } || cfg.https != { } || cfg.tcp != { } || cfg.udp != { };
       };

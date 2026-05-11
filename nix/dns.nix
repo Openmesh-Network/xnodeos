@@ -5,11 +5,11 @@
   ...
 }:
 let
-  cfg = config.services.xnode-dns;
+  cfg = config.xnode.dns;
 in
 {
   options = {
-    services.xnode-dns = {
+    xnode.dns = {
       enable = lib.mkEnableOption "Xnode DNS" // {
         default = true;
       };
@@ -109,7 +109,7 @@ in
           };
         };
 
-        services.xnode-dns.zones.".".plugins = ''
+        xnode.dns.zones.".".plugins = ''
           cache
           forward . 127.0.0.1:5352
         '';
@@ -137,7 +137,7 @@ in
         let
           mdns-domains = lib.filterAttrs (
             domain: settings: lib.strings.hasSuffix ".local" domain
-          ) config.services.xnode-reverse-proxy.http;
+          ) config.xnode.reverse-proxy.http;
           dnssd = builtins.map (domain: lib.strings.removeSuffix ".local" domain) (
             builtins.attrNames mdns-domains
           );

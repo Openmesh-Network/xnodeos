@@ -59,7 +59,7 @@ in
       };
     };
 
-    services.xnode-reverse-proxy.https = builtins.listToAttrs (
+    xnode.reverse-proxy.https = builtins.listToAttrs (
       builtins.map
         (domain: {
           name = domain;
