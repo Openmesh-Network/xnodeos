@@ -85,6 +85,7 @@ in
             };
           };
         };
+        systemd.services.yggdrasil.startLimitIntervalSec = 0;
 
         services.yggdrasil.group = "xnode-dns";
         systemd.services.coredns.path = [ pkgs.yggdrasil ];

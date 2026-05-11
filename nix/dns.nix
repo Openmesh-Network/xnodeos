@@ -124,10 +124,14 @@ in
             '') (builtins.attrNames cfg.zones)
           );
         };
-        systemd.services.coredns.serviceConfig = {
-          User = "xnode-dns";
-          Group = "xnode-dns";
-          DynamicUser = lib.mkForce false;
+        systemd.services.coredns = {
+          startLimitIntervalSec = 0;
+          serviceConfig = {
+            User = "xnode-dns";
+            Group = "xnode-dns";
+            DynamicUser = lib.mkForce false;
+            Restart = lib.mkForce "always";
+          };
         };
 
         networking.firewall.allowedUDPPorts = lib.mkIf cfg.openFirewall [ 53 ];

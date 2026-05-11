@@ -268,6 +268,14 @@ in
               '';
             };
           }) sockets
+          ++ [
+            {
+              name = "nginx";
+              value = {
+                startLimitIntervalSec = lib.mkForce 0;
+              };
+            }
+          ]
         );
       };
 
