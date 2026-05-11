@@ -89,27 +89,6 @@ in
 
         services.yggdrasil.group = "xnode-dns";
         systemd.services.coredns.path = [ pkgs.yggdrasil ];
-        services.coredns.package =
-          (pkgs.coredns.override {
-            externalPlugins = [
-              {
-                name = "directdns_me";
-                repo = "github.com/plopmenz/coredns-directdns-me";
-                version = "22fd9a4268745995ed2c3263b12fd0fe2f5f8ed7";
-                position.before = "forward";
-              }
-              {
-                name = "directdns";
-                repo = "github.com/Plopmenz/coredns-directdns";
-                version = "b8064d0b21c35d8ad514c4aa81738976a8e49b52";
-                position.after = "directdns_me";
-              }
-            ];
-            vendorHash = "sha256-N+qiI/hxBBzb4PGDR9gluII96lZAtwv4qGEmgxBqK4Y=";
-          }).overrideAttrs
-            (old: {
-              doCheck = false;
-            });
         xnode.dns.zones.".".plugins = ''
           directdns_me yggdrasil.trustless.cloud
           directdns yggdrasil.trustless.cloud

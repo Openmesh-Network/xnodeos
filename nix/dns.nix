@@ -112,6 +112,7 @@ in
         xnode.dns.zones.".".plugins = ''
           cache
           forward . 127.0.0.1:5352
+          latency_sort
         '';
 
         services.coredns = {
@@ -123,6 +124,33 @@ in
               }
             '') (builtins.attrNames cfg.zones)
           );
+          package =
+            (pkgs.coredns.override {
+              externalPlugins = [
+                {
+                  name = "latency_sort";
+                  repo = "github.com/plopmenz/coredns-latency-sort";
+                  version = "d40e6f0b426418fafdee8e87db64cdbbe073d74e";
+                  position.before = "forward";
+                }
+                {
+                  name = "directdns_me";
+                  repo = "github.com/plopmenz/coredns-directdns-me";
+                  version = "22fd9a4268745995ed2c3263b12fd0fe2f5f8ed7";
+                  position.after = "latency_sort";
+                }
+                {
+                  name = "directdns";
+                  repo = "github.com/Plopmenz/coredns-directdns";
+                  version = "b8064d0b21c35d8ad514c4aa81738976a8e49b52";
+                  position.after = "directdns_me";
+                }
+              ];
+              vendorHash = "sha256-r1J+9J6EH+KeK5JuUgTjJbNOAP+Iryu5Ln6QYfb4h34=";
+            }).overrideAttrs
+              (old: {
+                doCheck = false;
+              });
         };
         systemd.services.coredns = {
           startLimitIntervalSec = 0;
