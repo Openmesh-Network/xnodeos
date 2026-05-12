@@ -130,7 +130,7 @@ in
                 {
                   name = "latency_sort";
                   repo = "github.com/plopmenz/coredns-latency-sort";
-                  version = "d40e6f0b426418fafdee8e87db64cdbbe073d74e";
+                  version = "e8e61c056c7e27e9d6e61b627d452d2ddb142500";
                   position.before = "forward";
                 }
                 {
@@ -146,7 +146,7 @@ in
                   position.after = "directdns_me";
                 }
               ];
-              vendorHash = "sha256-yGvxpzJnje4Nn+bi3X0i6hV8wa8TpeTAmygWj2E6zAM=";
+              vendorHash = "sha256-Ze/d0TJt557erRgWuoeTZceGfcFUEhVICjZ1EQCjJ2M=";
             }).overrideAttrs
               (old: {
                 doCheck = false;
