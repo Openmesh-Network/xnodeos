@@ -262,11 +262,13 @@ in
                     lib.types.submodule {
                       options = {
                         policy = lib.mkOption {
-                          type = lib.types.nullOr lib.types.enum [
-                            "Strict"
-                            "Closed"
-                            "Auto"
-                          ];
+                          type = lib.types.nullOr (
+                            lib.types.enum [
+                              "Strict"
+                              "Closed"
+                              "Auto"
+                            ]
+                          );
                           default = null;
                         };
 
