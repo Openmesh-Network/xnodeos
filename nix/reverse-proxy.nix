@@ -293,6 +293,7 @@ in
       recommendedProxySettings = true;
       recommendedTlsSettings = true;
       recommendedGzipSettings = true;
+      proxyTimeout = "10m";
       resolver.addresses = [ "127.0.0.1" ];
       appendConfig = ''
         worker_processes auto;
