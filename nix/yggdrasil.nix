@@ -146,8 +146,6 @@ in
             server {
               listen 0.0.0.0:443;
               listen [::]:443;
-              proxy_connect_timeout 10s;
-              proxy_timeout 10s;
               resolver 127.0.0.1 ipv4=off;
               proxy_pass $backend;
               ssl_preread on;
