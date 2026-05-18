@@ -95,6 +95,29 @@ in
           directdns yggdrasil.trustless.cloud
         '';
 
+        networking.getaddrinfo = {
+          enable = true;
+          label = {
+            "200::/7" = 99;
+          };
+          precedence = {
+            "200::/7" = 45;
+          };
+        };
+        systemd.network.networks."99-yggdrasil" = {
+          matchConfig.Name = "ygg0";
+          ipv6AddressLabels = [
+            {
+              Label = 99;
+              Prefix = "200::/7";
+            }
+          ];
+          networkConfig = {
+            DHCP = "no";
+            IPv6AcceptRA = false;
+            LinkLocalAddressing = "no";
+          };
+        };
       }
       (lib.mkIf cfg.multicast.enable {
         services.yggdrasil = {
