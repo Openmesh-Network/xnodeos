@@ -38,5 +38,8 @@ jobs:
       - name: Set system
         run: sed -i "s/x86_64/$(uname -m)/" ./config/xnode-config/hardware
 
-      - name: Upload XnodeOS default config to Cachix
-        run: nix build ./config#nixosConfigurations.xnode.config.system.build.toplevel --accept-flake-config --print-out-paths --fallback | cachix push openmesh
+      - name: Build XnodeOS default config
+        run: nix build ./config#nixosConfigurations.xnode.config.system.build.toplevel --accept-flake-config --fallback
+
+      - name: Upload all config dependencies to Cachix
+        run: nix path-info --recursive ./result | cachix push openmesh
