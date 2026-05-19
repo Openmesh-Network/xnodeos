@@ -113,9 +113,7 @@ in
             }
           ];
           networkConfig = {
-            DHCP = "no";
-            IPv6AcceptRA = false;
-            LinkLocalAddressing = "no";
+            KeepConfiguration = "yes";
           };
         };
       }

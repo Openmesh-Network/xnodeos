@@ -8,14 +8,8 @@
 
     zramSwap.enable = true; # Compress memory
     services.fwupd.enable = true; # Allow applications to update firmware
-    services.dbus.implementation = "broker"; # High performance and reliability implementation of D-Bus
 
-    services.getty = {
-      helpLine = ''Access Remotely: \4 \6 \6{ygg0}'';
-      extraArgs = [
-        "--issue-file=/etc/issue"
-      ];
-    };
+    services.getty.helpLine = ''Access Remotely: \4 \6 \6{ygg0}'';
 
     # Update limits
     boot.kernel.sysctl = {
@@ -47,18 +41,7 @@
           "-Dvmlinux-h=provided"
           "-Dvmlinux-h-path=${vmlinuxH}/vmlinux.h"
         ];
-        nativeBuildInputs = [
-          (pkgs.python3Packages.python.withPackages (
-            ps: with ps; [
-              lxml
-              jinja2
-              ps.pyelftools
-              ps.pefile # locked behind doCheck
-            ]
-          ))
-        ]
-        ++ (old.nativeBuildInputs or [ ])
-        ++ [ pkgs.bpftools ];
+        nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ pkgs.bpftools ];
       });
 
     systemd.additionalUpstreamSystemUnits = [
