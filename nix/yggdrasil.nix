@@ -14,6 +14,10 @@ in
         default = true;
       };
 
+      cache = {
+        enable = lib.mkEnableOption "Xnode Yggdrasil Cache";
+      };
+
       multicast = {
         enable = lib.mkEnableOption "Xnode Yggdrasil Multicast" // {
           default = true;
@@ -117,6 +121,29 @@ in
           };
         };
       }
+      (lib.mkIf cfg.cache.enable {
+        nixpkgs.config = {
+          contentAddressedByDefault = true;
+          enableParallelBuildingByDefault = true;
+          strictDepsByDefault = true;
+        };
+        nix.settings = {
+          experimental-features = [ "ca-derivations" ];
+          require-sigs = false;
+          accept-flake-config = lib.mkForce false;
+          substituters = lib.mkForce [ ]; # Add localhost binary cache server
+          trusted-public-keys = lib.mkForce [ ];
+        };
+        # Enable nix-serve / Attic like binary cache server
+        # App:
+        # 1. [If request does not come from localhost or multicast local yggdrasil peer], reject
+        # 2. Check local store
+        # 3. Ask multicast local yggdrasil peer
+        # OS:
+        # 1. Check local store
+        # 2. [If incoming from multicast local yggdrasil peer], ask all _other_ multicast local yggdrasil peers
+        # 3. Kademlia overlay query to find nodes that serve this binary cache item (OS only, app will go through OS on step 2)
+      })
       (lib.mkIf cfg.multicast.enable {
         services.yggdrasil = {
           openMulticastPort = true;
