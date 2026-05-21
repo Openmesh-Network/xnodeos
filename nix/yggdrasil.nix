@@ -134,7 +134,7 @@ in
           substituters = lib.mkForce [ ]; # Add localhost binary cache server
           trusted-public-keys = lib.mkForce [ ];
         };
-        # Enable nix-serve / Attic like binary cache server
+        # Enable nix-serve / attic / harmonia like binary cache server
         # App:
         # 1. [If request does not come from localhost or multicast local yggdrasil peer], reject
         # 2. Check local store

@@ -47,6 +47,11 @@ in
           )}";
         };
       }
+      {
+        kernel.sysctl = {
+          "net.ipv4.ping_group_range" = "0 65535";
+        };
+      }
     ];
 
     # https://github.com/NixOS/nixpkgs/issues/405256

@@ -3,6 +3,10 @@
 
   inputs = {
     nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.xz";
+    xnode-builders = {
+      url = "github:Openmesh-Network/xnode-builders";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     disko = {
       url = "github:nix-community/disko/latest";
@@ -11,11 +15,11 @@
 
     xnode-manager = {
       url = "github:Openmesh-Network/xnode-manager/WIP";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.xnode-builders.follows = "xnode-builders";
     };
     xnode-auth = {
       url = "github:Openmesh-Network/xnode-auth/dev";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.xnode-builders.follows = "xnode-builders";
     };
   };
 
