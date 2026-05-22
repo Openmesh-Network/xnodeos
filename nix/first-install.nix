@@ -10,7 +10,7 @@
 
     system.systemBuilderCommands = ''
       substitute ${config.system.build.first-install} $out/first-install \
-        --replace __TOPLEVEL__ $out
+        --replace-fail __TOPLEVEL__ $out
       chmod +x $out/first-install
     '';
   };
