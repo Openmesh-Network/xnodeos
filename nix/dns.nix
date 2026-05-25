@@ -146,7 +146,7 @@ in
                   position.after = "directdns_me";
                 }
               ];
-              vendorHash = "sha256-UbswAYSGgF82ngKqrnWH39hSPfC5FoooSWDDnkWG9HQ=";
+              vendorHash = "sha256-im4R/l13rgURUNOQQIX/vecZ2Peek03yn8shSMarEoo=";
             }).overrideAttrs
               (old: {
                 doCheck = false;
