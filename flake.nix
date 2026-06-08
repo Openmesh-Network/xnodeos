@@ -2,25 +2,14 @@
   description = "XnodeOS Modules";
 
   inputs = {
-    nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.xz";
-    xnode-builders = {
-      url = "github:Openmesh-Network/xnode-builders";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    disko.url = "github:nix-community/disko/latest";
+    nixos-facter-modules.url = "github:nix-community/nixos-facter-modules";
+    lanzaboote.url = "github:nix-community/lanzaboote";
 
-    disko = {
-      url = "github:nix-community/disko/latest";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    xnode-manager.url = "github:Openmesh-Network/xnode-manager/v1";
+    nixpkgs.follows = "xnode-manager/nixpkgs";
 
-    xnode-manager = {
-      url = "github:Openmesh-Network/xnode-manager/WIP";
-      inputs.xnode-builders.follows = "xnode-builders";
-    };
-    xnode-auth = {
-      url = "github:Openmesh-Network/xnode-auth/dev";
-      inputs.xnode-builders.follows = "xnode-builders";
-    };
+    xnode-auth.url = "github:Openmesh-Network/xnode-auth/v1";
   };
 
   nixConfig = {
@@ -36,10 +25,9 @@
 
   outputs = inputs: {
     nixosModules = {
-      default = import ./nix/os.nix { inherit inputs; };
-      app = import ./nix/app.nix { inherit inputs; };
-      dns = ./nix/dns.nix;
-      reverse-proxy = ./nix/reverse-proxy.nix;
+      default = inputs.xnode-manager.nixosModules.default;
+      container = ./nix/container-module.nix;
+      reverse-proxy = ./nix/reverse-proxy-module.nix;
     };
   };
 }

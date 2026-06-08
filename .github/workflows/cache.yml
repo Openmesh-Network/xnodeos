@@ -32,11 +32,8 @@ jobs:
           name: openmesh
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
-      - name: Use config from branch
-        run: sed -i -e "s|\"github:Openmesh-Network/xnodeos\"|\"github:Openmesh-Network/xnodeos/${BRANCH_NAME}\"|g" ./config/flake.nix
-
       - name: Set system
-        run: sed -i "s/x86_64/$(uname -m)/" ./config/xnode-config/hardware
+        run: sed -i "s/x86_64/$(uname -m)/" ./config/facter.json
 
       - name: Build XnodeOS default config
         run: nix build ./config#nixosConfigurations.xnode.config.system.build.toplevel --accept-flake-config --fallback

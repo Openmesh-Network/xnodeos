@@ -1,18 +1,17 @@
 {
-  description = "XnodeOS Installer";
+  description = "XnodeOS Kexec Installer";
 
   inputs = {
-    config.url = "path:../config";
-    nixpkgs.follows = "config/nixpkgs";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05";
+    disko = {
+      url = "github:nix-community/disko/latest";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   nixConfig = {
-    extra-substituters = [
-      "https://openmesh.cachix.org"
-      "https://nix-community.cachix.org"
-    ];
+    extra-substituters = [ "https://nix-community.cachix.org" ];
     extra-trusted-public-keys = [
-      "openmesh.cachix.org-1:du4NDeMWxcX8T5GddfuD0s/Tosl3+6b+T2+CLKHgXvQ="
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
     ];
   };
@@ -42,8 +41,8 @@
         }
       );
       nixosModules = {
-        kexec = import ./kexec.nix { inherit inputs; };
-        iso = import ./iso.nix { inherit inputs; };
+        kexec = { pkgs, ... }@args: import ./kexec.nix (args // { inherit inputs; });
+        iso = { pkgs, ... }@args: import ./iso.nix (args // { inherit inputs; });
       };
     };
 }

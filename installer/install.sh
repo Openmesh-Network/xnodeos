@@ -1,129 +1,161 @@
-# Create empty config folder
-mkdir -p /var/lib/xnode-manager/host/config/xnode-config
+mkdir -p /etc/nixos
 
-# Collect all non-removable, writable disks
-DISKS=()
-mapfile -t DISKS < <(
-  lsblk --nodeps --json |
-    jq -r '.blockdevices[] | select(.type=="disk" and .rm==false and .ro==false) | .name' |
-    grep -v '^zram' # Exclude zram
-)
-
-# Collect list of disks after formatting
-OUTPUT_DISKS=()
-for i in "${!DISKS[@]}"; do
-  OUTPUT_DISKS+=("/dev/mapper/disk${i}")
+# Generate disko-config.nix
+DISK_COUNTER=0
+DISK_CONFIG_FILE="/etc/nixos/disko-config.nix"
+cat > $DISK_CONFIG_FILE << EOL
+{
+  disko.devices = {
+    disk = {
+EOL
+for disk in $(lsblk  --nodeps  --json | jq '.blockdevices[] | select(.type == "disk" and .rm == false and .ro == false) | .name' -r); do # Find all attached disks
+  if [[ $disk == zram* ]]; then
+    continue
+  fi
+  
+  cat >> $DISK_CONFIG_FILE << EOL
+      disk${DISK_COUNTER} = {
+        device = "/dev/${disk}";
+        type = "disk";
+        content = {
+          type = "gpt";
+          partitions = {
+EOL
+  MOUNT_POINT="/mnt/disk${DISK_COUNTER}"
+  if [ "$DISK_COUNTER" -eq 0 ]; then
+    # Boot disk
+    MOUNT_POINT="/"
+    cat >> $DISK_CONFIG_FILE << EOL
+            boot = {
+              size = "1M";
+              type = "EF02"; # for grub MBR
+            };
+            ESP = {
+              type = "EF00";
+              size = "1G";
+              content = {
+                type = "filesystem";
+                format = "vfat";
+                mountpoint = "/boot";
+                mountOptions = [ "umask=0077" ];
+              };
+            };
+EOL
+  fi
+  if [[ $ENCRYPTED ]]; then
+    cat >> $DISK_CONFIG_FILE << EOL
+              luks = {
+                size = "100%";
+                content = {
+                  type = "luks";
+                  name = "disk${DISK_COUNTER}";
+                  passwordFile = "/tmp/secret.key";
+                  settings = {
+                    allowDiscards = true;
+                    bypassWorkqueues = true;
+                  };
+                  content = {
+                    type = "filesystem";
+                    format = "ext4";
+                    mountpoint = "${MOUNT_POINT}";
+                  };
+                };
+              };
+            };
+          };
+        };
+EOL
+  else
+    cat >> $DISK_CONFIG_FILE << EOL
+            root = {
+              size = "100%";
+              content = {
+                type = "filesystem";
+                format = "ext4";
+                mountpoint = "${MOUNT_POINT}";
+              };
+            };
+          };
+        };
+      };
+EOL
+  fi
+    DISK_COUNTER=$(expr $DISK_COUNTER + 1)
 done
-
-# Save disk configuration
-DISKSTR=$(printf "%s\n" "${DISKS[@]}")
-echo -n "$DISKSTR" > /var/lib/xnode-manager/host/config/xnode-config/disks
+cat >> $DISK_CONFIG_FILE << EOL
+    };
+  };
+}
+EOL
 
 # Generate disk encryption key
 echo -n "$(tr -dc '[:alnum:]' < /dev/random | head -c64)" > /tmp/secret.key
 
-# Generate Secure Boot Keys
-sbctl create-keys
+# Apply disk formatting and mount drives
+disko --mode destroy,format,mount /etc/nixos/disko-config.nix --yes-wipe-all-disks
 
-# Attempt to enroll the Secure Boot Keys
-# This will only work if setup mode was enabled before running the installer
-sbctl enroll-keys || echo "Failed to enroll secure boot keys"
+# Move disko-config to root file system
+mkdir -p /mnt/etc/nixos
+mv /etc/nixos/disko-config.nix /mnt/etc/nixos
 
-# Detect if system contains TPM
-TPM=$(cat /sys/class/tpm/tpm0/tpm_version_major) || TPM=""
+# Perform nixos-facter hardware scan
+nixos-facter -o /mnt/etc/nixos/facter.json
 
-# Detect if system is booted into UEFI or Legacy
-[ -d /sys/firmware/efi ] && BOOT="UEFI" || BOOT="BIOS"
+if [[ $ENCRYPTED ]]; then
+  # Generate Secure Boot Keys
+  mkdir -p /mnt/var/lib/sbctl/keys
+  sbctl create-keys --export /mnt/var/lib/sbctl/keys --database-path /mnt/var/lib/sbctl
 
-# Perform hardware scan
-nixos-facter -o /var/lib/xnode-manager/host/config/xnode-config/hardware
+  # Encrypt disk password for unattended (TPM2) boot decryption (Clevis)
+  # Initially do not bind to any pcrs (always allow decryption) for the first boot
+  # Set pcrs after first boot (to capture the TPM2 register values of XnodeOS instead of XnodeOS installer)
+  cat /tmp/secret.key | clevis encrypt tpm2 '{"pcr_ids": ""}' > /mnt/etc/nixos/clevis.jwe
+
+  # Mark system as encrypted
+  echo -n "1" > /mnt/etc/nixos/encrypted
+fi
 
 # Set main configuration
-cp /etc/xnodeos-config-file /var/lib/xnode-manager/host/config/flake.nix
-cp /etc/xnodeos-config-lock /var/lib/xnode-manager/host/config/flake.lock
-if [[ $VERSION == "latest" ]]; then
-  # Lock to major version only
-  sed -i -E 's|"github:Openmesh-Network/xnodeos/v([0-9]+)\.[0-9]+\.[0-9]+"|"github:Openmesh-Network/xnodeos/v\1"|g' /var/lib/xnode-manager/host/config/flake.nix
-fi
-
-# Apply environmental variable configuration
-if [[ $TPM ]]; then
-  echo -n "${TPM}" > /var/lib/xnode-manager/host/config/xnode-config/tpm
-fi
-if [[ $BOOT ]]; then
-  echo -n "${BOOT}" > /var/lib/xnode-manager/host/config/xnode-config/boot
-fi
-if [[ $OWNER ]]; then
-  echo -n "${OWNER}" > /var/lib/xnode-manager/host/config/xnode-config/owner
+(curl -L "https://raw.githubusercontent.com/Openmesh-Network/xnodeos/v1/config/flake.nix")> /mnt/etc/nixos/flake.nix
+if [[ $XNODE_OWNER ]]; then
+  echo -n "${XNODE_OWNER}" > /mnt/etc/nixos/xnode-owner
 fi
 if [[ $DOMAIN ]]; then
-  echo -n "${DOMAIN}" > /var/lib/xnode-manager/host/config/xnode-config/domain
+  echo -n "${DOMAIN}" > /mnt/etc/nixos/domain
 fi
-if [[ $EMAIL ]]; then
-  echo -n "${EMAIL}" > /var/lib/xnode-manager/host/config/xnode-config/email
+if [[ $ACME_EMAIL ]]; then
+  echo -n "${ACME_EMAIL}" > /mnt/etc/nixos/acme-email
 fi
-if [[ $DEBUG ]]; then
-  echo -n "${DEBUG}" > /var/lib/xnode-manager/host/config/xnode-config/debug
+if [[ $USER_PASSWD ]]; then
+  echo -n "${USER_PASSWD}" > /mnt/etc/nixos/user-passwd
 fi
-if [[ $NETWORK ]]; then
-  echo -n "${NETWORK}" > /var/lib/xnode-manager/host/config/xnode-config/network
+if [[ $NETWORK_CONFIG ]]; then
+  echo -n "${NETWORK_CONFIG}" > /mnt/etc/nixos/network-config
 fi
 if [[ $INITIAL_CONFIG ]]; then
-  sed -i "/# START USER CONFIG/,/# END USER CONFIG/c\# START USER CONFIG\n${INITIAL_CONFIG}\n# END USER CONFIG" /var/lib/xnode-manager/host/config/flake.nix
+  sed -i "/# START USER CONFIG/,/# END USER CONFIG/c\# START USER CONFIG\n${INITIAL_CONFIG}\n# END USER CONFIG" /mnt/etc/nixos/flake.nix
 fi
-
-# Apply disk partitions and formatting
-disko --mode destroy,format,mount --flake /var/lib/xnode-manager/host/config#xnode --no-deps --yes-wipe-all-disks
-if [[ ${#OUTPUT_DISKS[@]} -gt 1 ]]; then
-  # Multiple disks
-  BRTFS_MODE="--data single --metadata raid1"
-else
-  # Single disk
-  BRTFS_MODE="--data single --metadata dup"
-fi
-mkfs.btrfs --force --label ROOT ${BRTFS_MODE} ${OUTPUT_DISKS[@]}
-sleep 1 # /dev/disk/by-label/ROOT isn't available instantly
-
-# Create subvolumes and mount disks 
-mount --mkdir /dev/disk/by-label/ROOT /mnt
-btrfs subvolume create /mnt/root
-btrfs subvolume create /mnt/nix
-btrfs subvolume create /mnt/boot
-umount /mnt
-mount --mkdir -o lazytime,noatime,compress-force=zstd:1,subvol=root /dev/disk/by-label/ROOT /mnt
-mount --mkdir -o lazytime,noatime,compress-force=zstd:1,subvol=nix /dev/disk/by-label/ROOT /mnt/nix
-mount --mkdir -o lazytime,noatime,compress-force=zstd:1,subvol=boot /dev/disk/by-label/ROOT /mnt/boot
-for i in "${!DISKS[@]}"; do
-  mount --mkdir -o umask=0077 "/dev/disk/by-partlabel/disk-disk${i}-ESP" "/mnt/boot${i}"
-done
-
-if [[ $TPM == "2" ]]; then
-  # Create TPM2 policy
-  systemd-pcrlock make-policy
-
-  for i in "${!DISKS[@]}"; do
-    # Setup unattended TPM2 boot decryption and remove password decryption
-    systemd-cryptenroll --wipe-slot="all" --tpm2-device="auto" --unlock-key-file="/tmp/secret.key" "/dev/disk/by-partlabel/disk-disk${i}-LUKS"
-  done
-else
-  # Store disk decryption key in plain text
-  cp /tmp/secret.key /var/lib/xnode-manager/host/config/xnode-config/disk-key
-fi
-
-# Copy content to disk
-mkdir -p /mnt/var/lib
-cp -r /var/lib/xnode-manager /mnt/var/lib
-cp -r /var/lib/sbctl /mnt/var/lib
-cp -r /var/lib/systemd /mnt/var/lib
 
 # Build configuration
-nix build /mnt/var/lib/xnode-manager/host/config#nixosConfigurations.xnode.config.system.build.toplevel --store /mnt --out-link /mnt/var/lib/xnode-manager/host/new-result --extra-substituters auto?trusted=1
+nix build /mnt/etc/nixos#nixosConfigurations.xnode.config.system.build.toplevel --store /mnt --profile /mnt/nix/var/nix/profiles/system 
 
 # Apply configuration
-systemd-firstboot --root /mnt --setup-machine-id
-systemd-run --pty --quiet --collect --service-type oneshot --root-directory /mnt /var/lib/xnode-manager/host/new-result/first-install
+# Based on https://github.com/NixOS/nixpkgs/blob/master/pkgs/by-name/ni/nixos-install/nixos-install.sh and https://github.com/NixOS/nixpkgs/blob/nixos-unstable/pkgs/by-name/ni/nixos-enter/nixos-enter.sh
+mkdir -p /mnt/dev /mnt/sys /mnt/proc
+chmod 0755 /mnt/dev /mnt/sys /mnt/proc
+mount --rbind /dev /mnt/dev
+mount --rbind /sys /mnt/sys
+mount --rbind /proc /mnt/proc
+chroot /mnt /nix/var/nix/profiles/system/sw/bin/bash -c "$(cat << EOL
+set -e
+/nix/var/nix/profiles/system/activate || true
+/nix/var/nix/profiles/system/sw/bin/systemd-tmpfiles --create --remove -E || true
+mount --rbind --mkdir / /mnt
+mount --make-rslave /mnt
+NIXOS_INSTALL_BOOTLOADER=1 /nix/var/nix/profiles/system/bin/switch-to-configuration boot
+umount -R /mnt && (rmdir /mnt 2>/dev/null || true)
+EOL
+)"
 
 # Boot into new OS
-if [ -z "$DEBUG" ]; then
-  reboot
-fi
+reboot
