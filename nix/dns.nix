@@ -145,8 +145,13 @@ in
                   version = "b8064d0b21c35d8ad514c4aa81738976a8e49b52";
                   position.after = "directdns_me";
                 }
+                {
+                  name = "finalize";
+                  repo = "github.com/tmeckel/coredns-finalizer";
+                  version = "f9c997c8e5fefa742bd0f67994fee9b5bbd9148e";
+                }
               ];
-              vendorHash = "sha256-Z/rMWRfQaKLq1JSwrxy19K4lJOJIwXXJmQGd1zqFIvQ=";
+              vendorHash = "sha256-8NtDpPRKLEzTUfe7XXnwQ7Uk8+GeH+fDOJ83B4WLGT4=";
             }).overrideAttrs
               (old: {
                 doCheck = false;

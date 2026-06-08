@@ -61,6 +61,10 @@ in
         };
       };
 
+      dns = {
+        enable = lib.mkEnableOption "Xnode Yggdrasil DNS";
+      };
+
       public-dns = {
         enable = lib.mkEnableOption "Xnode Yggdrasil Public DNS";
 
@@ -199,6 +203,11 @@ in
               ssl_preread on;
             }
           '';
+      })
+      (lib.mkIf cfg.dns.enable {
+        xnode.dns.zones.".".plugins = ''
+          finalize
+        '';
       })
       (lib.mkIf cfg.public-dns.enable {
         xnode.dns.zones.${cfg.public-dns.domain}.plugins = ''
