@@ -41,9 +41,14 @@ nixos-facter -o /var/lib/xnode-manager/host/config/xnode-config/hardware
 # Set main configuration
 cp /etc/xnodeos-config-file /var/lib/xnode-manager/host/config/flake.nix
 cp /etc/xnodeos-config-lock /var/lib/xnode-manager/host/config/flake.lock
-if [[ $VERSION == "latest" ]]; then
-  # Lock to major version only
+if [[ $VERSION_LOCK == "EXACT" ]]; then
+  # No need to do anything, the included flake.nix is already locked to exact
+fi
+if [[ $VERSION_LOCK == "MAYOR" || ! $VERSION_LOCK ]]; then
   sed -i -E 's|"github:Openmesh-Network/xnodeos/v([0-9]+)\.[0-9]+\.[0-9]+"|"github:Openmesh-Network/xnodeos/v\1"|g' /var/lib/xnode-manager/host/config/flake.nix
+fi
+if [[ $VERSION_LOCK == "NONE" ]]; then
+  sed -i 's|"github:Openmesh-Network/xnodeos/v[0-9]+\.[0-9]+\.[0-9]+"|"github:Openmesh-Network/xnodeos"|g' /var/lib/xnode-manager/host/config/flake.nix
 fi
 
 # Apply environmental variable configuration

@@ -18,6 +18,8 @@ INITIAL_CONFIG env var can be set to apply any user configuration to the initial
 
 VERSION env var can be set to use a specific version installer instead of latest.
 
+VERSION_LOCK env var can be set to define the xnodeos branch to lock to. NONE will lock to default branch (main), MAJOR will lock to major installer version only (e.g. v1.2.3 -> v1), EXACT will lock to the exact installer version (e.g. v1.2.3 -> v1.2.3). Defaults to MAJOR.
+
 The installer will fully encrypt all writable non-removable drives (with unattended TPM2 decryption on boot, if TPM2 is detected). For Secure Boot keys to be automatically enrolled, Secure Boot should be enabled and the system should be booted into setup mode before running the installer. This protects against malicious actors with physical access to your Xnode.
 
 The kexec installer will attempt to copy the statically configured networking configuration of the currently running operating system, but might not work for more exotic setups. Network configuration through DHCP is recommended.
