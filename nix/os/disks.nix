@@ -30,6 +30,7 @@ in
             "noatime"
             "compress-force=zstd:1"
             "subvol=root"
+            "user_subvol_rm_allowed"
           ];
         };
         "/nix" = {
