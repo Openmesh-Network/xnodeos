@@ -1,7 +1,7 @@
 { config, pkgs, ... }:
 {
   config = {
-    system.nixos.distroName = "Openmesh XnodeOS";
+    system.nixos.distroName = "XnodeOS";
 
     users.mutableUsers = false; # Prevent non-declarative users
     users.allowNoPasswordLogin = true; # Allow a system without any users that can be logged into
@@ -13,6 +13,8 @@
 
     # Update limits
     boot.kernel.sysctl = {
+      "net.ipv4.tcp_congestion_control" = "bbr";
+      "net.core.default_qdisc" = "fq";
       "fs.inotify.max_user_instances" = 2147483647;
       "net.core.rmem_max" = 16777216;
       "net.core.wmem_max" = 16777216;
@@ -20,7 +22,6 @@
       "net.ipv4.neigh.default.gc_thresh2" = 8192;
       "net.ipv4.neigh.default.gc_thresh3" = 16384;
     };
-    systemd.services.nginx.serviceConfig.LimitNOFILE = 65536;
     systemd.services.dbus-broker.serviceConfig.LimitNOFILE = 65536;
 
     systemd.package =

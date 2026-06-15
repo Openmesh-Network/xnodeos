@@ -16,6 +16,7 @@ in
   };
 
   config = lib.mkIf cfg.container.enable {
+    system.nixos.distroName = "XnodeOS Container";
     system.boot.loader.id = "xnode-boot-container";
     boot = lib.mkMerge [
       (
