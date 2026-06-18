@@ -73,8 +73,36 @@ in
           default = "yggdrasil.trustless.cloud";
           example = "example.com";
           description = ''
-            Port for allowing inbound peering connections. 
+            Domain to public DNS. 
           '';
+        };
+      };
+
+      xnode-info = {
+        xnode-auth = {
+          enable = lib.mkEnableOption "Set Xnode Auth of Xnode Info to Yggdrasil IP" // {
+            default = true;
+          };
+        };
+        dns = {
+          enable = lib.mkEnableOption "Publish Yggdrasil DirectDNS domain to Xnode Info" // {
+            default = builtins.pathExists "${config.xnode.xnode-config}/domain";
+          };
+
+          domain =
+            lib.mkOption {
+              type = lib.types.str;
+              example = "example.com";
+              description = ''
+                Domain to CNAME to our Yggdrasil DirectDNS domain.
+              '';
+            }
+            // (
+              if (builtins.pathExists "${config.xnode.xnode-config}/domain") then
+                { default = builtins.readFile "${config.xnode.xnode-config}/domain"; }
+              else
+                { }
+            );
         };
       };
     };
@@ -83,8 +111,15 @@ in
   config = lib.mkIf cfg.enable (
     lib.mkMerge [
       {
+        users.groups.yggdrasil = { };
+        users.users.yggdrasil = {
+          isSystemUser = true;
+          group = "yggdrasil";
+        };
+
         services.yggdrasil = {
           enable = true;
+          group = "yggdrasil";
           persistentKeys = true;
           settings = {
             IfName = "ygg0";
@@ -93,10 +128,12 @@ in
             };
           };
         };
-        systemd.services.yggdrasil.wants = [ "coredns.service" ];
+        systemd.services.yggdrasil.wants = [ "coredns.service" ]; # Make sure DNS resolver is up before starting yggdrasil
         systemd.services.yggdrasil.startLimitIntervalSec = 0;
 
-        services.yggdrasil.group = "xnode-dns";
+        users.users.${config.systemd.services.coredns.serviceConfig.User}.extraGroups = [
+          config.services.yggdrasil.group
+        ];
         systemd.services.coredns.path = [ pkgs.yggdrasil ];
         xnode.dns.zones.".".plugins = ''
           directdns_me yggdrasil.trustless.cloud
@@ -113,7 +150,7 @@ in
           };
         };
         systemd.network.networks."99-yggdrasil" = {
-          matchConfig.Name = "ygg0";
+          matchConfig.Name = config.services.yggdrasil.settings.IfName;
           ipv6AddressLabels = [
             {
               Label = 99;
@@ -210,19 +247,109 @@ in
         '';
       })
       (lib.mkIf cfg.public-dns.enable {
-        xnode.dns.zones.${cfg.public-dns.domain}.plugins = ''
-          cache
+        xnode.dns.zones.${cfg.public-dns.domain}.plugins =
+          let
+            escapedPublicDNSDomain = builtins.replaceStrings [ "." ] [ "\." ] cfg.public-dns.domain;
+          in
+          ''
+            cache
 
-          rewrite {
-              # Add _public_dns. prefix to the root domain
-              name regex ^([^.]+)\.yggdrasil\.trustless\.cloud\.$ _public_dns.{1}.${cfg.public-dns.domain}.
+            rewrite {
+                # Add _public_dns. prefix to the root domain
+                name regex ^([^.]+)\.${escapedPublicDNSDomain}\.$ _public_dns.{1}.${cfg.public-dns.domain}.
 
-              # Remove _public_dns. prefix
-              answer name ^_public_dns\.(.*)\.yggdrasil\.trustless\.cloud\.$ {1}.${cfg.public-dns.domain}.
-          }
+                # Remove _public_dns. prefix
+                answer name ^_public_dns\.(.*)\.${escapedPublicDNSDomain}\.$ {1}.${cfg.public-dns.domain}.
+            }
 
-          directdns ${cfg.public-dns.domain}
-        '';
+            directdns ${cfg.public-dns.domain}
+          '';
+      })
+      (lib.mkIf cfg.xnode-info.xnode-auth.enable {
+        systemd.services.xnode-info-xnode-auth-yggdrasil = {
+          wantedBy = [ "multi-user.target" ];
+          requires = [ "yggdrasil.service" ];
+          after = [ "yggdrasil.service" ];
+          description = "Set Xnode Auth of Xnode Info to Yggdrasil IP";
+          serviceConfig = {
+            Type = "oneshot";
+            User = "xnode-info";
+            Group = "xnode-info";
+          };
+          path = [
+            pkgs.iproute2
+            pkgs.jq
+          ];
+          script = ''
+            ifname=${config.services.yggdrasil.settings.IfName}
+            ipv6=""
+
+            for i in $(seq 1 60); do
+              ipv6=$(ip -j -6 addr show dev "$ifname" 2>/dev/null \
+                | jq -r '.[0].addr_info[]? | select(.scope=="global") | .local // empty' \
+                | head -n1)
+              if [ -n "$ipv6" ]; then
+                break
+              fi
+              sleep 1
+            done
+
+            if [ -z "$ipv6" ]; then
+              echo "Timed out waiting for a global Yggdrasil address on $ifname" >&2
+              exit 1
+            fi
+
+            echo -n "ip:$ipv6" > /xnode-info/xnode-auth
+          '';
+        };
+      })
+      (lib.mkIf cfg.xnode-info.dns.enable {
+        systemd.services.xnode-info-dns-yggdrasil = {
+          wantedBy = [ "multi-user.target" ];
+          requires = [ "yggdrasil.service" ];
+          after = [ "yggdrasil.service" ];
+          description = "Publish Yggdrasil DirectDNS domain to Xnode Info";
+          serviceConfig = {
+            Type = "oneshot";
+            User = "xnode-info";
+            Group = "xnode-info";
+          };
+          path = [
+            pkgs.iproute2
+            pkgs.jq
+          ];
+          script = ''
+            ifname=${config.services.yggdrasil.settings.IfName}
+            ipv6=""
+
+            for i in $(seq 1 60); do
+              ipv6=$(ip -j -6 addr show dev "$ifname" 2>/dev/null \
+                | jq -r '.[0].addr_info[]? | select(.scope=="global") | .local // empty' \
+                | head -n1)
+              if [ -n "$ipv6" ]; then
+                break
+              fi
+              sleep 1
+            done
+
+            if [ -z "$ipv6" ]; then
+              echo "Timed out waiting for a global Yggdrasil address on $ifname" >&2
+              exit 1
+            fi
+
+            cat > /xnode-info/dns/yggdrasil.json <<EOF
+            {
+              "records": [
+                {
+                  "type": "cname",
+                  "name": "${cfg.xnode-info.dns.domain}",
+                  "value": "''${ipv6//:/-}.yggdrasil.trustless.cloud"
+                }
+              ]
+            }
+            EOF
+          '';
+        };
       })
     ]
   );

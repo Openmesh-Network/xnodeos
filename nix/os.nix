@@ -20,6 +20,7 @@
     ./os/debug.nix
     ./auto-update.nix
     ./yggdrasil.nix
+    ./xnode-info.nix
   ];
 
   config = {
