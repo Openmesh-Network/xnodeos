@@ -9,26 +9,28 @@ let
         address = [ ];
         route = [ ];
       };
-  network-config = builtins.map (address: {
-    name = address.address;
-    value = {
-      ip = builtins.map (ip: { address = "${ip.local}/${builtins.toString ip.prefixlen}"; }) (
-        builtins.filter (ip: ip.scope == "global" && !(ip.dynamic or false)) address.addr_info
-      );
-      route =
-        builtins.map
-          (route: {
-            destination = if (route.dst == "default") then "0.0.0.0/0" else route.dst;
-            gateway = route.gateway;
-            onlink = builtins.elem "onlink" route.flags;
-          })
-          (
-            builtins.filter (
-              route: route.protocol == "static" && route.dev == address.ifname
-            ) raw-network-config.route
-          );
-    };
-  }) raw-network-config.address;
+  network-config = builtins.filter (network: network.value.ip != [ ] || network.value.route != [ ]) (
+    builtins.map (address: {
+      name = address.address;
+      value = {
+        ip = builtins.map (ip: { address = "${ip.local}/${builtins.toString ip.prefixlen}"; }) (
+          builtins.filter (ip: ip.scope == "global" && !(ip.dynamic or false)) address.addr_info
+        );
+        route =
+          builtins.map
+            (route: {
+              destination = if (route.dst == "default") then "0.0.0.0/0" else route.dst;
+              gateway = route.gateway;
+              onlink = builtins.elem "onlink" route.flags;
+            })
+            (
+              builtins.filter (
+                route: route.protocol == "static" && route.dev == address.ifname
+              ) raw-network-config.route
+            );
+      };
+    }) raw-network-config.address
+  );
 in
 {
   config = lib.mkMerge [
