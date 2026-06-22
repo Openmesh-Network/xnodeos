@@ -22,6 +22,7 @@ in
     ./auto-update.nix
     ./yggdrasil.nix
     ./xnode-info.nix
+    ./xnode-secret.nix
 
     inputs.self.nixosModules.dns
     inputs.self.nixosModules.reverse-proxy

@@ -21,6 +21,7 @@
     ./auto-update.nix
     ./yggdrasil.nix
     ./xnode-info.nix
+    ./xnode-secret.nix
   ];
 
   config = {
