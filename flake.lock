@@ -452,11 +452,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1779383001,
-        "narHash": "sha256-rTWYfka0S1kOm4JNYnVRD/J70QEuokvvzAdnVeQz4w0=",
+        "lastModified": 1782162347,
+        "narHash": "sha256-cXQeefP2Ebm8Xfy8EBbZUhQHqTnvufog0Twe3C21DPM=",
         "owner": "Openmesh-Network",
         "repo": "xnode-auth",
-        "rev": "33c08bc8c6fdf73d456053088e3f8c9437d75be1",
+        "rev": "a7a991166fd0ab30889b19b133ebf66f10ca137d",
         "type": "github"
       },
       "original": {

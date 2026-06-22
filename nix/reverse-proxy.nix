@@ -290,9 +290,12 @@ in
       group = "xnode-reverse-proxy";
 
       recommendedOptimisation = true;
-      recommendedProxySettings = true;
       recommendedTlsSettings = true;
+      recommendedBrotliSettings = true;
       recommendedGzipSettings = true;
+      experimentalZstdSettings = true;
+      recommendedProxySettings = true;
+      recommendedUwsgiSettings = true;
       resolver.addresses = [ "127.0.0.1" ];
       proxyTimeout = "10m";
       clientMaxBodySize = "0";
