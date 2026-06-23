@@ -14,18 +14,18 @@ let
       name = address.address;
       value = {
         ip = builtins.map (ip: { address = "${ip.local}/${builtins.toString ip.prefixlen}"; }) (
-          builtins.filter (ip: ip.scope == "global" && !(ip.dynamic or false)) address.addr_info
+          builtins.filter (ip: (ip.scope or "global") == "global" && !(ip.dynamic or false)) address.addr_info
         );
         route =
           builtins.map
             (route: {
               destination = if (route.dst == "default") then "0.0.0.0/0" else route.dst;
-              gateway = route.gateway;
-              onlink = builtins.elem "onlink" route.flags;
+              gateway = route.gateway or null;
+              onlink = builtins.elem "onlink" (route.flags or [ ]);
             })
             (
               builtins.filter (
-                route: route.protocol == "static" && route.dev == address.ifname
+                route: (route.protocol or "boot") == "static" && route.dev == address.ifname
               ) raw-network-config.route
             );
       };
@@ -192,11 +192,16 @@ in
               MulticastDNS = "yes";
             };
             address = builtins.map (ip: ip.address) interface.value.ip;
-            routes = builtins.map (route: {
-              Destination = route.destination;
-              Gateway = route.gateway;
-              GatewayOnLink = if (route.onlink) then "yes" else "no";
-            }) interface.value.route;
+            routes = builtins.map (
+              route:
+              {
+                Destination = route.destination;
+                GatewayOnLink = if (route.onlink) then "yes" else "no";
+              }
+              // (lib.optionalAttrs (route.gateway != null) {
+                Gateway = route.gateway;
+              })
+            ) interface.value.route;
           };
         }) network-config
       );
