@@ -14,6 +14,39 @@ in
         default = true;
       };
 
+      rate-limit = {
+        enable = lib.mkEnableOption "Xnode DNS Rate Limit" // {
+          default = true;
+        };
+
+        rate = lib.mkOption {
+          type = lib.types.str;
+          default = "100/second";
+          example = "10/minute";
+          description = ''
+            How many packets are allowed.
+          '';
+        };
+
+        timeout = lib.mkOption {
+          type = lib.types.str;
+          default = "10s";
+          example = "5m";
+          description = ''
+            Over what period to measure the rate limit.
+          '';
+        };
+
+        burst = lib.mkOption {
+          type = lib.types.str;
+          default = "200 packets";
+          example = "5 packets";
+          description = ''
+            What burst to allow.
+          '';
+        };
+      };
+
       mdns = {
         enable = lib.mkEnableOption "Xnode Multicast DNS";
 
@@ -170,6 +203,34 @@ in
         networking.firewall.allowedUDPPorts = lib.mkIf cfg.openFirewall [ 53 ];
         networking.firewall.allowedTCPPorts = lib.mkIf cfg.openFirewall [ 53 ];
       }
+      (lib.mkIf cfg.rate-limit.enable {
+        networking.nftables.tables.dns-rrl = {
+          family = "inet";
+          content = ''
+            set dns_meter {
+              type ipv4_addr
+              flags dynamic, timeout
+            }
+
+            set dns_meter_v6 {
+              type ipv6_addr
+              flags dynamic, timeout
+            }
+
+            chain input {
+              type filter hook input priority filter; policy accept;
+
+              iif lo accept
+
+              udp dport 53 add @dns_meter { ip saddr timeout ${cfg.rate-limit.timeout} limit rate over ${cfg.rate-limit.rate} burst ${cfg.rate-limit.burst} } drop
+              tcp dport 53 add @dns_meter { ip saddr timeout ${cfg.rate-limit.timeout} limit rate over ${cfg.rate-limit.rate} burst ${cfg.rate-limit.burst} } drop
+
+              udp dport 53 add @dns_meter_v6 { ip6 saddr and ffff:ffff:ffff:ffff:: timeout ${cfg.rate-limit.timeout} limit rate over ${cfg.rate-limit.rate} burst ${cfg.rate-limit.burst} } drop
+              tcp dport 53 add @dns_meter_v6 { ip6 saddr and ffff:ffff:ffff:ffff:: timeout ${cfg.rate-limit.timeout} limit rate over ${cfg.rate-limit.rate} burst ${cfg.rate-limit.burst} } drop
+            }
+          '';
+        };
+      })
       (
         let
           mdns-domains = lib.filterAttrs (
