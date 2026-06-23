@@ -106,6 +106,10 @@ in
             DNS = ""; # Prevent resolved from copying networking.nameservers
             DNSStubListener = "no";
             DNSStubListenerExtra = "127.0.0.1:5352";
+
+            # Security hardening
+            DNSOverTLS = "yes";
+            DNSSEC = "yes";
           };
         };
 
