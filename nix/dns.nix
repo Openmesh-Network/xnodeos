@@ -14,39 +14,6 @@ in
         default = true;
       };
 
-      rate-limit = {
-        enable = lib.mkEnableOption "Xnode DNS Rate Limit" // {
-          default = true;
-        };
-
-        rate = lib.mkOption {
-          type = lib.types.str;
-          default = "100/second";
-          example = "10/minute";
-          description = ''
-            How many packets are allowed.
-          '';
-        };
-
-        timeout = lib.mkOption {
-          type = lib.types.str;
-          default = "10s";
-          example = "5m";
-          description = ''
-            Over what period to measure the rate limit.
-          '';
-        };
-
-        burst = lib.mkOption {
-          type = lib.types.str;
-          default = "200 packets";
-          example = "5 packets";
-          description = ''
-            What burst to allow.
-          '';
-        };
-      };
-
       mdns = {
         enable = lib.mkEnableOption "Xnode Multicast DNS";
 
@@ -143,6 +110,12 @@ in
         };
 
         xnode.dns.zones.".".plugins = ''
+          rrl {
+            responses-per-second 100
+            nxdomains-per-second 10
+            errors-per-second 10
+            window 5
+          }
           cache
           forward . 127.0.0.1:5352
           latency_sort
@@ -160,6 +133,12 @@ in
           package =
             (pkgs.coredns.override {
               externalPlugins = [
+                {
+                  name = "rrl";
+                  repo = "github.com/coredns/rrl/plugins/rrl";
+                  version = "ac1135e077ba5cd312e96b5902280dce3eda1c30";
+                  position.before = "acl";
+                }
                 {
                   name = "latency_sort";
                   repo = "github.com/plopmenz/coredns-latency-sort";
@@ -184,7 +163,7 @@ in
                   version = "f9c997c8e5fefa742bd0f67994fee9b5bbd9148e";
                 }
               ];
-              vendorHash = "sha256-8NtDpPRKLEzTUfe7XXnwQ7Uk8+GeH+fDOJ83B4WLGT4=";
+              vendorHash = "sha256-i88+6udpWrtqe8dZsIy+2ZMGQp4ocA7P4xJG72XmBAs=";
             }).overrideAttrs
               (old: {
                 doCheck = false;
@@ -203,34 +182,6 @@ in
         networking.firewall.allowedUDPPorts = lib.mkIf cfg.openFirewall [ 53 ];
         networking.firewall.allowedTCPPorts = lib.mkIf cfg.openFirewall [ 53 ];
       }
-      (lib.mkIf cfg.rate-limit.enable {
-        networking.nftables.tables.dns-rrl = {
-          family = "inet";
-          content = ''
-            set dns_meter {
-              type ipv4_addr
-              flags dynamic, timeout
-            }
-
-            set dns_meter_v6 {
-              type ipv6_addr
-              flags dynamic, timeout
-            }
-
-            chain input {
-              type filter hook input priority filter; policy accept;
-
-              iif lo accept
-
-              udp dport 53 add @dns_meter { ip saddr timeout ${cfg.rate-limit.timeout} limit rate over ${cfg.rate-limit.rate} burst ${cfg.rate-limit.burst} } drop
-              tcp dport 53 add @dns_meter { ip saddr timeout ${cfg.rate-limit.timeout} limit rate over ${cfg.rate-limit.rate} burst ${cfg.rate-limit.burst} } drop
-
-              udp dport 53 add @dns_meter_v6 { ip6 saddr and ffff:ffff:ffff:ffff:: timeout ${cfg.rate-limit.timeout} limit rate over ${cfg.rate-limit.rate} burst ${cfg.rate-limit.burst} } drop
-              tcp dport 53 add @dns_meter_v6 { ip6 saddr and ffff:ffff:ffff:ffff:: timeout ${cfg.rate-limit.timeout} limit rate over ${cfg.rate-limit.rate} burst ${cfg.rate-limit.burst} } drop
-            }
-          '';
-        };
-      })
       (
         let
           mdns-domains = lib.filterAttrs (

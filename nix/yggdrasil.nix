@@ -252,6 +252,12 @@ in
             escapedPublicDNSDomain = builtins.replaceStrings [ "." ] [ "\." ] cfg.public-dns.domain;
           in
           ''
+            rrl {
+              responses-per-second 100
+              nxdomains-per-second 10
+              errors-per-second 10
+              window 5
+            }
             cache
 
             rewrite {
