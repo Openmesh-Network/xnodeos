@@ -191,6 +191,8 @@ in
               IPv6AcceptRA = "yes";
               MulticastDNS = "yes";
             };
+            dhcpV4Config.UseDNS = false;
+            dhcpV6Config.UseDNS = false;
             address = builtins.map (ip: ip.address) interface.value.ip;
             routes = builtins.map (
               route:
