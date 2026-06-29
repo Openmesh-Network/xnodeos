@@ -1,4 +1,9 @@
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   cfg = config.xnode;
   raw-network-config =
@@ -207,6 +212,36 @@ in
           };
         }) network-config
       );
+    }
+    {
+      services.usbmuxd.enable = true;
+      systemd.services.iphone-tether = {
+        description = "iPhone USB tether pairing";
+        wantedBy = [ "multi-user.target" ];
+        after = [ "usbmuxd.service" ];
+        serviceConfig = {
+          Restart = "always";
+          RestartSec = 5;
+        };
+        script =
+          let
+            lsusb = lib.getExe' pkgs.usbutils "lsusb";
+            idevicepair = lib.getExe' pkgs.libimobiledevice "idevicepair";
+          in
+          ''
+            until ${lsusb} | grep -qi "Apple"; do sleep 1; done
+
+            if ! ${idevicepair} validate &>/dev/null; then
+              systemctl restart usbmuxd
+              sleep 1
+            fi
+
+            until ${idevicepair} pair &>/dev/null; do sleep 1; done
+
+            while ${lsusb} | grep -qi "Apple"; do sleep 1; done
+
+          '';
+      };
     }
   ];
 }
