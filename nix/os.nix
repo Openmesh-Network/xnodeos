@@ -22,6 +22,8 @@
     ./yggdrasil.nix
     ./xnode-info.nix
     ./xnode-secret.nix
+
+    ./os/vuinputd.nix
   ];
 
   config = {
