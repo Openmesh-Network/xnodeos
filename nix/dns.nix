@@ -183,6 +183,20 @@ in
           };
         };
 
+        systemd.targets.xnode-dns = {
+          description = "Local DNS resolution up.";
+          wantedBy = [ "multi-user.target" ];
+          after = [
+            "systemd-resolved.service"
+            "coredns.service"
+          ];
+          wants = [
+            "systemd-resolved.service"
+            "coredns.service"
+          ];
+
+        };
+
         networking.firewall.allowedUDPPorts = lib.mkIf cfg.openFirewall [ 53 ];
         networking.firewall.allowedTCPPorts = lib.mkIf cfg.openFirewall [ 53 ];
       }
