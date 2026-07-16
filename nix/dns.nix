@@ -152,7 +152,7 @@ in
                 {
                   name = "directdns_me";
                   repo = "github.com/plopmenz/coredns-directdns-me";
-                  version = "9e28d50f6a370d951ca7d21c22c18501b99ad0e5";
+                  version = "a76707fb71cc52d8dabba530be0a713ae847b80c";
                   position.after = "latency_sort";
                 }
                 {
@@ -167,7 +167,7 @@ in
                   version = "f9c997c8e5fefa742bd0f67994fee9b5bbd9148e";
                 }
               ];
-              vendorHash = "sha256-i88+6udpWrtqe8dZsIy+2ZMGQp4ocA7P4xJG72XmBAs=";
+              vendorHash = "sha256-HGHkXoXMLnGpo4NN7CzYIXhIfLO/WlAfKA4VTvY7L2Q=";
             }).overrideAttrs
               (old: {
                 doCheck = false;

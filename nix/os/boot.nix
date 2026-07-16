@@ -26,17 +26,12 @@ in
 {
   config = {
     boot.initrd.systemd.enable = true;
-    boot.initrd.systemd.additionalUpstreamUnits = [ "systemd-pcrphase-initrd.service" ];
-    boot.initrd.systemd.targets.initrd.wants = [ "systemd-pcrphase-initrd.service" ];
-    boot.initrd.systemd.storePaths = [
-      "${config.boot.initrd.systemd.package}/lib/systemd/systemd-pcrextend"
+    systemd.tpm2.pcrphases.enable = true;
+    boot.initrd.systemd.tpm2.pcrphases.enable = true;
+    boot.initrd.systemd.additionalUpstreamUnits = [
+      "systemd-pcrosseparator.service"
     ];
-    systemd.additionalUpstreamSystemUnits = [
-      "systemd-pcrextend@.service"
-      "systemd-pcrextend.socket"
-      "systemd-pcrphase.service"
-      "systemd-pcrphase-sysinit.service"
-    ];
+    boot.initrd.systemd.services.systemd-pcrosseparator.wantedBy = [ "initrd.target" ];
     environment.etc."pcrlock.d".source = "${config.systemd.package}/lib/pcrlock.d";
 
     systemd.services.current-uki-pcrlock = lib.mkIf (tpm == "2") {
