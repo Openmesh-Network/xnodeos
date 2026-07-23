@@ -195,6 +195,19 @@ in
           Open required firewall ports for the reverse proxy to expose it's locations.
         '';
       };
+
+      unix-proxy = {
+        enable = lib.mkOption {
+          type = lib.types.bool;
+          default = false;
+          example = true;
+          description = ''
+            Instead of listening on port 443 directly, listen on unix:/run/xnode-reverse-proxy/xnode-reverse-proxy.sock with proxy_protocol on.
+
+            This allows extracting the real client ip when another local reverse proxy is front of our nginx SSL listen.
+          '';
+        };
+      };
     };
   };
 
@@ -273,6 +286,9 @@ in
               name = "nginx";
               value = {
                 startLimitIntervalSec = lib.mkForce 0;
+                serviceConfig = lib.mkIf cfg.unix-proxy.enable {
+                  RuntimeDirectory = lib.mkForce "nginx xnode-reverse-proxy";
+                };
               };
             }
           ]
@@ -407,6 +423,25 @@ in
                 proxyPass = "${config.protocol}://${id}${config.path}";
               }
             ) cfg.https.${domain};
+
+            listen = lib.optionals cfg.unix-proxy.enable (
+              (builtins.map (addr: {
+                inherit addr;
+                port = config.services.nginx.defaultHTTPListenPort;
+              }) config.services.nginx.defaultListenAddresses)
+              ++ [
+                {
+                  addr = "unix:/run/xnode-reverse-proxy/xnode-reverse-proxy.sock";
+                  ssl = true;
+                  proxyProtocol = true;
+                }
+              ]
+            );
+
+            extraConfig = lib.optionalString cfg.unix-proxy.enable ''
+              real_ip_header proxy_protocol;
+              set_real_ip_from unix:;
+            '';
           };
         }) (builtins.attrNames cfg.https))
       );

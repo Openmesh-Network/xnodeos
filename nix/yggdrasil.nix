@@ -209,6 +209,7 @@ in
         networking.firewall.allowedTCPPorts = [ cfg.peer.port ];
       })
       (lib.mkIf cfg.proxy.enable {
+        # HTTP proxy
         services.nginx.virtualHosts."_" = lib.mkForce {
           default = true;
           locations."/".extraConfig = ''
@@ -216,8 +217,9 @@ in
             proxy_pass http://$host$request_uri;
           '';
         };
-        services.nginx.defaultSSLListenPort = 8443;
-        networking.firewall.allowedTCPPorts = [ 443 ];
+
+        # HTTPS proxy
+        xnode.reverse-proxy.unix-proxy.enable = true;
         services.nginx.streamConfig =
           let
             domains = builtins.attrNames config.xnode.reverse-proxy.https;
@@ -225,19 +227,24 @@ in
           ''
             map $ssl_preread_server_name $backend {
                 ${builtins.concatStringsSep "                \n" (
-                  builtins.map (
-                    domain: "${domain} localhost:${builtins.toString config.services.nginx.defaultSSLListenPort};"
-                  ) domains
+                  builtins.map (domain: "${domain} unix:/run/xnode-reverse-proxy/xnode-reverse-proxy.sock;") domains
                 )}
-                default $ssl_preread_server_name:443;
+                default unix:/run/xnode-reverse-proxy/external.sock;
             }
 
             server {
               listen 0.0.0.0:443;
               listen [::]:443;
-              resolver 127.0.0.1 ipv4=off;
-              proxy_pass $backend;
               ssl_preread on;
+              proxy_protocol on;
+              proxy_pass $backend;
+            }
+
+            server {
+              listen unix:/run/xnode-reverse-proxy/external.sock proxy_protocol;
+              ssl_preread on;
+              resolver 127.0.0.1 ipv4=off;
+              proxy_pass $ssl_preread_server_name:443;
             }
           '';
       })
