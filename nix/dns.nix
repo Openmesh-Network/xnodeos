@@ -167,7 +167,7 @@ in
                   version = "f9c997c8e5fefa742bd0f67994fee9b5bbd9148e";
                 }
               ];
-              vendorHash = "sha256-HGHkXoXMLnGpo4NN7CzYIXhIfLO/WlAfKA4VTvY7L2Q=";
+              vendorHash = "sha256-w3aQAwh6R9vNKqi58zSy59bniI/irxLV38HqujAZ8ZQ=";
             }).overrideAttrs
               (old: {
                 doCheck = false;

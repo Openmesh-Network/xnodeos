@@ -20,7 +20,7 @@ let
     systemd-pcrlock lock-secureboot-policy || echo "Could not lock SecureBoot Policy"
     systemd-pcrlock lock-secureboot-authority || echo "Could not lock SecureBoot Authority"
 
-    SYSTEMD_ESP_PATH="$esp" systemd-pcrlock make-policy --pcr=7 --pcr=11 ''${NIXOS_INSTALL_BOOTLOADER:+--force}
+    SYSTEMD_ESP_PATH="$esp" systemd-pcrlock make-policy --components="${config.systemd.package}/lib/pcrlock.d" --components=/var/lib/pcrlock.d --pcr=7 --pcr=11 ''${NIXOS_INSTALL_BOOTLOADER:+--force}
   '';
 in
 {
@@ -32,7 +32,6 @@ in
       "systemd-pcrosseparator.service"
     ];
     boot.initrd.systemd.services.systemd-pcrosseparator.wantedBy = [ "initrd.target" ];
-    environment.etc."pcrlock.d".source = "${config.systemd.package}/lib/pcrlock.d";
 
     systemd.services.current-uki-pcrlock = lib.mkIf (tpm == "2") {
       wantedBy = [ "multi-user.target" ];
