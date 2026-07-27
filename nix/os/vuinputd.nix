@@ -44,8 +44,14 @@ let
       cp vuinputd/udev/*.hwdb $out/lib/udev/hwdb.d/
     '';
   };
+  cfg = config.xnode;
+  debug =
+    if (builtins.pathExists "${cfg.xnode-config}/debug") then
+      builtins.readFile "${cfg.xnode-config}/debug"
+    else
+      "";
 in
-{
+lib.mkIf (debug != "") {
   # https://github.com/girl-pp-ua/nixos-infra/blob/master/modules/services/experimental/gayming-nixos/uinput-vuinputd.nix
   security.wrappers.vuinputd = {
     owner = "root";
