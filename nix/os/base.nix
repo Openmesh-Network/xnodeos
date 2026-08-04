@@ -24,6 +24,8 @@
     };
     systemd.services.dbus-broker.serviceConfig.LimitNOFILE = 65536;
 
+    powerManagement.cpuFreqGovernor = "performance";
+
     systemd.package =
       let
         kernelDev = config.system.build.kernel.dev;
