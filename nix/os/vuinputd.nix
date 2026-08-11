@@ -51,7 +51,7 @@ let
     else
       "";
 in
-lib.mkIf (debug != "") {
+lib.mkIf (debug != "" && pkgs.stdenv.hostPlatform.isx86_64) {
   # https://github.com/girl-pp-ua/nixos-infra/blob/master/modules/services/experimental/gayming-nixos/uinput-vuinputd.nix
   security.wrappers.vuinputd = {
     owner = "root";
