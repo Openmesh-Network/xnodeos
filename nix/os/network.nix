@@ -42,7 +42,7 @@ in
     {
       networking = {
         useDHCP = false;
-        useNetworkd = true;
+        dhcpcd.enable = false;
         wireless.iwd = {
           enable = true;
         };
