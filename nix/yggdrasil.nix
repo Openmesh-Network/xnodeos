@@ -265,7 +265,7 @@ in
               errors-per-second 10
               window 5
             }
-            cache
+            cache 86400
 
             rewrite {
                 # Add _public_dns. prefix to the root domain
