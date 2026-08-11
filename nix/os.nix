@@ -1,8 +1,5 @@
 { inputs }:
-{
-  lib,
-  ...
-}:
+{ ... }:
 {
   imports = [
     ./first-install.nix

@@ -120,7 +120,7 @@ in
             errors-per-second 10
             window 5
           }
-          cache
+          cache 86400
           forward . 127.0.0.1:5352
           latency_sort
         '';
@@ -152,7 +152,7 @@ in
                 {
                   name = "directdns_me";
                   repo = "github.com/plopmenz/coredns-directdns-me";
-                  version = "a76707fb71cc52d8dabba530be0a713ae847b80c";
+                  version = "88f15b1e70baf94ce219d9c8fc9bc27e34ae408c";
                   position.after = "latency_sort";
                 }
                 {
@@ -167,7 +167,7 @@ in
                   version = "f9c997c8e5fefa742bd0f67994fee9b5bbd9148e";
                 }
               ];
-              vendorHash = "sha256-w3aQAwh6R9vNKqi58zSy59bniI/irxLV38HqujAZ8ZQ=";
+              vendorHash = "sha256-FWFh4amECV4o+UZtQrtw80/RBA0nb5Ujjfy6Uh5XgoU=";
             }).overrideAttrs
               (old: {
                 doCheck = false;
