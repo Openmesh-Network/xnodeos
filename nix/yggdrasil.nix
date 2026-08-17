@@ -268,11 +268,11 @@ in
             cache 86400
 
             rewrite {
-                # Add _public_dns. prefix to the root domain
-                name regex ^([^.]+)\.${escapedPublicDNSDomain}\.$ _public_dns.{1}.${cfg.public-dns.domain}.
+                # Add public.directdns. prefix to the root domain
+                name regex ^([^.]+)\.${escapedPublicDNSDomain}\.$ public.directdns.{1}.${cfg.public-dns.domain}.
 
-                # Remove _public_dns. prefix
-                answer name ^_public_dns\.(.*)\.${escapedPublicDNSDomain}\.$ {1}.${cfg.public-dns.domain}.
+                # Remove public.directdns. prefix
+                answer name ^public.directdns\.(.*)\.${escapedPublicDNSDomain}\.$ {1}.${cfg.public-dns.domain}.
             }
 
             directdns ${cfg.public-dns.domain}
