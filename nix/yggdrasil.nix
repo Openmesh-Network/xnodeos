@@ -79,11 +79,6 @@ in
       };
 
       xnode-info = {
-        xnode-auth = {
-          enable = lib.mkEnableOption "Set Xnode Auth of Xnode Info to Yggdrasil IP" // {
-            default = true;
-          };
-        };
         dns = {
           enable = lib.mkEnableOption "Publish Yggdrasil DirectDNS domain to Xnode Info" // {
             default = builtins.pathExists "${config.xnode.xnode-config}/domain";
@@ -103,6 +98,11 @@ in
               else
                 { }
             );
+        };
+        auth = {
+          enable = lib.mkEnableOption "Set Xnode Auth of Xnode Info to Yggdrasil IP" // {
+            default = true;
+          };
         };
       };
     };
@@ -278,44 +278,6 @@ in
             directdns ${cfg.public-dns.domain}
           '';
       })
-      (lib.mkIf cfg.xnode-info.xnode-auth.enable {
-        systemd.services.xnode-info-xnode-auth-yggdrasil = {
-          wantedBy = [ "multi-user.target" ];
-          requires = [ "yggdrasil.service" ];
-          after = [ "yggdrasil.service" ];
-          description = "Set Xnode Auth of Xnode Info to Yggdrasil IP";
-          serviceConfig = {
-            Type = "oneshot";
-            User = "xnode-info";
-            Group = "xnode-info";
-          };
-          path = [
-            pkgs.iproute2
-            pkgs.jq
-          ];
-          script = ''
-            ifname=${config.services.yggdrasil.settings.IfName}
-            ipv6=""
-
-            for i in $(seq 1 60); do
-              ipv6=$(ip -j -6 addr show dev "$ifname" 2>/dev/null \
-                | jq -r '.[0].addr_info[]? | select(.scope=="global") | .local // empty' \
-                | head -n1)
-              if [ -n "$ipv6" ]; then
-                break
-              fi
-              sleep 1
-            done
-
-            if [ -z "$ipv6" ]; then
-              echo "Timed out waiting for a global Yggdrasil address on $ifname" >&2
-              exit 1
-            fi
-
-            echo -n "ip:$ipv6" > /xnode-info/xnode-auth
-          '';
-        };
-      })
       (lib.mkIf cfg.xnode-info.dns.enable {
         systemd.services.xnode-info-dns-yggdrasil = {
           wantedBy = [ "multi-user.target" ];
@@ -356,11 +318,49 @@ in
                 {
                   "type": "cname",
                   "name": "${cfg.xnode-info.dns.domain}",
-                  "value": "''${ipv6//:/-}.yggdrasil.trustless.cloud"
+                  "value": "''${ipv6//:/-}.yggdrasil.trustless.cloud."
                 }
               ]
             }
             EOF
+          '';
+        };
+      })
+      (lib.mkIf cfg.xnode-info.auth.enable {
+        systemd.services.xnode-info-auth-yggdrasil = {
+          wantedBy = [ "multi-user.target" ];
+          requires = [ "yggdrasil.service" ];
+          after = [ "yggdrasil.service" ];
+          description = "Set Xnode Auth of Xnode Info to Yggdrasil IP";
+          serviceConfig = {
+            Type = "oneshot";
+            User = "xnode-info";
+            Group = "xnode-info";
+          };
+          path = [
+            pkgs.iproute2
+            pkgs.jq
+          ];
+          script = ''
+            ifname=${config.services.yggdrasil.settings.IfName}
+            ipv6=""
+
+            for i in $(seq 1 60); do
+              ipv6=$(ip -j -6 addr show dev "$ifname" 2>/dev/null \
+                | jq -r '.[0].addr_info[]? | select(.scope=="global") | .local // empty' \
+                | head -n1)
+              if [ -n "$ipv6" ]; then
+                break
+              fi
+              sleep 1
+            done
+
+            if [ -z "$ipv6" ]; then
+              echo "Timed out waiting for a global Yggdrasil address on $ifname" >&2
+              exit 1
+            fi
+
+            echo -n "ip:$ipv6" > /xnode-info/auth/yggdrasil
           '';
         };
       })

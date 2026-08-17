@@ -25,6 +25,7 @@ in
     systemd.tmpfiles.rules = [
       "d /xnode-info 0775 xnode-info xnode-info -"
       "d /xnode-info/dns 0775 xnode-info xnode-info -" # Request certain DNS records to be set
+      "d /xnode-info/auth 0775 xnode-info xnode-info -" # Expose Xnode Auth Users to share access to
     ];
   };
 }
