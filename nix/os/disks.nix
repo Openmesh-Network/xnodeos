@@ -126,6 +126,8 @@ in
         fileSystems = [ "/" ];
       };
 
+      services.beesd.filesystems."ROOT".spec = "LABEL=ROOT";
+
       systemd.services.esp-sync = {
         wantedBy = [ "multi-user.target" ];
         description = "Sync /boot to all ESPs";
