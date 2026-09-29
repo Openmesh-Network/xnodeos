@@ -7,45 +7,25 @@
 }:
 {
   config = {
-    nixpkgs.overlays = [
-      (final: prev: {
-        nixos-facter = prev.nixos-facter.overrideAttrs (old: {
-          postPatch = (old.postPatch or "") + ''
-            substituteInPlace pkg/udev/udev.go \
-              --replace 'return nil, fmt.Errorf("failed to parse bus: %w", err)' \
-                        '/* Unknown bus (e.g. "acpi"), ignore instead of failing */'
-          '';
-        });
-      })
-    ];
-
     system.nixos.distroName = "Openmesh XnodeOS Installer";
     services.getty.extraArgs = [
       "--issue-file=/etc/issue"
     ];
     services.getty.autologinUser = lib.mkForce "root";
 
-    nix =
-      let
-        flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
-      in
-      {
-        settings = {
-          experimental-features = [
-            "nix-command"
-            "flakes"
-          ];
-          flake-registry = "";
-          accept-flake-config = true;
-          nix-path = config.nix.nixPath;
-        };
-        registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
-        nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
-        channel.enable = false;
+    nix = {
+      settings = {
+        experimental-features = [
+          "nix-command"
+          "flakes"
+        ];
+        flake-registry = "";
+        accept-flake-config = true;
       };
+      channel.enable = false;
+    };
 
     boot.initrd.systemd.enable = true;
-    environment.etc."pcrlock.d".source = "${config.systemd.package}/lib/pcrlock.d";
     environment.etc."xnodeos-config-cache".source =
       inputs.config.nixosConfigurations.xnode.config.system.build.toplevel;
     environment.etc."xnodeos-config-file".text = builtins.readFile ../config/flake.nix;

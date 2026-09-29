@@ -131,12 +131,12 @@ in
               (lib.optionalString (boot == "BIOS") ''
                 oc=${
                   let
-                    version = "1.0.7";
+                    version = "1.0.8";
                   in
                   pkgs.fetchzip {
                     name = "open-core-${version}";
                     url = "https://github.com/acidanthera/OpenCorePkg/releases/download/${version}/OpenCore-${version}-RELEASE.zip";
-                    sha256 = "sha256-qLr+wrE+geX+37WH2YUgxyCJXmfJcuUvejuLpaxFEco=";
+                    sha256 = "sha256-9vAO8SrJNofScQ3XjTe4oH3eMcwKx7viavsNjSJB2Iw=";
                     stripRoot = false;
                   }
                 }
