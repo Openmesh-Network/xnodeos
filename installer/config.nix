@@ -13,19 +13,35 @@
     ];
     services.getty.autologinUser = lib.mkForce "root";
 
-    nix = {
-      settings = {
-        experimental-features = [
-          "nix-command"
-          "flakes"
-        ];
-        flake-registry = "";
-        accept-flake-config = true;
+    nix =
+      let
+        flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
+      in
+      {
+        settings = {
+          experimental-features = [
+            "nix-command"
+            "flakes"
+          ];
+          flake-registry = "";
+          accept-flake-config = true;
+          nix-path = lib.mapAttrsToList (n: f: "${n}=${f.outPath}") flakeInputs;
+        };
+        registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
+        channel.enable = false;
       };
-      channel.enable = false;
-    };
 
     boot.initrd.systemd.enable = true;
+
+    systemd.additionalUpstreamSystemUnits = [
+      "systemd-tpm2-swtpm.service"
+    ];
+    systemd.services.systemd-tpm2-swtpm.environment."SYSTEMD_IN_INITRD" = "1";
+    systemd.services.systemd-tpm2-swtpm.path = [
+      pkgs.swtpm
+    ];
+    systemd.services.systemd-tpm2-swtpm.serviceConfig.ExecSearchPath = "${pkgs.swtpm}/bin";
+
     environment.etc."xnodeos-config-cache".source =
       inputs.config.nixosConfigurations.xnode.config.system.build.toplevel;
     environment.etc."xnodeos-config-file".text = builtins.readFile ../config/flake.nix;
@@ -57,6 +73,13 @@
               ln -s ${config.systemd.package}/lib/systemd/systemd-pcrlock $out/bin/systemd-pcrlock
             '';
           };
+          systemd-tpm2-swtpm = pkgs.stdenv.mkDerivation {
+            name = "systemd-tpm2-swtpm";
+            buildCommand = ''
+              mkdir -p $out/bin
+              ln -s ${config.systemd.package}/lib/systemd/systemd-tpm2-swtpm $out/bin/systemd-tpm2-swtpm
+            '';
+          };
         in
         [
           pkgs.util-linux
@@ -68,6 +91,7 @@
           pkgs.sbctl
           config.systemd.package
           systemd-pcrlock
+          systemd-tpm2-swtpm
 
           # Disko dependencies
 

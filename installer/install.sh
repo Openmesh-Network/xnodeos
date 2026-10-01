@@ -29,9 +29,6 @@ sbctl create-keys
 # This will only work if setup mode was enabled before running the installer
 sbctl enroll-keys || echo "Failed to enroll secure boot keys"
 
-# Detect if system contains TPM
-TPM=$(cat /sys/class/tpm/tpm0/tpm_version_major) || TPM=""
-
 # Detect if system is booted into UEFI or Legacy
 [ -d /sys/firmware/efi ] && BOOT="UEFI" || BOOT="BIOS"
 
@@ -52,9 +49,6 @@ if [[ $VERSION_LOCK == "NONE" ]]; then
 fi
 
 # Apply environmental variable configuration
-if [[ $TPM ]]; then
-  echo -n "${TPM}" > /var/lib/xnode-manager/host/config/xnode-config/tpm
-fi
 if [[ $BOOT ]]; then
   echo -n "${BOOT}" > /var/lib/xnode-manager/host/config/xnode-config/boot
 fi
@@ -102,18 +96,20 @@ for i in "${!DISKS[@]}"; do
   mount --mkdir -o umask=0077 "/dev/disk/by-partlabel/disk-disk${i}-ESP" "/mnt/boot${i}"
 done
 
-if [[ $TPM == "2" ]]; then
-  # Create TPM2 policy
-  systemd-pcrlock make-policy
-
-  for i in "${!DISKS[@]}"; do
-    # Setup unattended TPM2 boot decryption and remove password decryption
-    systemd-cryptenroll --wipe-slot="all" --tpm2-device="auto" --unlock-key-file="/tmp/secret.key" "/dev/disk/by-partlabel/disk-disk${i}-LUKS"
-  done
-else
-  # Store disk decryption key in plain text
-  cp /tmp/secret.key /var/lib/xnode-manager/host/config/xnode-config/disk-key
+if [ ! -e /sys/class/tpm/tpm0 ]; then
+  # No physical TPM2, create virtual
+  ln --symbolic --force --no-dereference /mnt/boot /sysefi
+  systemctl start systemd-tpm2-swtpm.service
+  udevadm wait --timeout=30 /dev/tpmrm0
 fi
+
+# Create TPM2 policy
+systemd-pcrlock make-policy
+
+for i in "${!DISKS[@]}"; do
+  # Setup unattended TPM2 boot decryption and remove password decryption
+  systemd-cryptenroll --wipe-slot="all" --tpm2-device="auto" --unlock-key-file="/tmp/secret.key" "/dev/disk/by-partlabel/disk-disk${i}-LUKS"
+done
 
 # Copy content to disk
 mkdir -p /mnt/var/lib

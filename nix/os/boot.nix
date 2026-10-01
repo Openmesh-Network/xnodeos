@@ -6,11 +6,6 @@
 }:
 let
   cfg = config.xnode;
-  tpm =
-    if (builtins.pathExists "${cfg.xnode-config}/tpm") then
-      builtins.readFile "${cfg.xnode-config}/tpm"
-    else
-      "";
   boot =
     if (builtins.pathExists "${cfg.xnode-config}/boot") then
       builtins.readFile "${cfg.xnode-config}/boot"
@@ -26,14 +21,38 @@ in
 {
   config = {
     boot.initrd.systemd.enable = true;
-    systemd.tpm2.pcrphases.enable = true;
-    boot.initrd.systemd.tpm2.pcrphases.enable = true;
+
+    boot.kernelParams = [ "systemd.tpm2_software_fallback=yes" ];
     boot.initrd.systemd.additionalUpstreamUnits = [
+      "systemd-tpm2-swtpm.service"
       "systemd-pcrosseparator.service"
     ];
+    boot.initrd.systemd.services.systemd-tpm2-swtpm.path = [
+      pkgs.swtpm
+    ];
+    boot.initrd.systemd.services.systemd-tpm2-swtpm.serviceConfig.ExecSearchPath = "${pkgs.swtpm}/bin";
+    boot.initrd.systemd.storePaths = [
+      "${config.systemd.package}/lib/systemd/systemd-tpm2-swtpm"
+    ];
+    boot.initrd.systemd.initrdBin = [ pkgs.swtpm ];
+    boot.initrd.kernelModules = [ "tpm_vtpm_proxy" ];
+
+    systemd.additionalUpstreamSystemUnits = [
+      "systemd-tpm2-swtpm.service"
+    ];
+    systemd.services.systemd-tpm2-swtpm.environment."SYSTEMD_ESP_PATH" =
+      "${config.boot.loader.efi.efiSysMountPoint}";
+    systemd.services.systemd-tpm2-swtpm.path = [
+      pkgs.swtpm
+    ];
+    systemd.services.systemd-tpm2-swtpm.serviceConfig.ExecSearchPath = "${pkgs.swtpm}/bin";
+    system.fsPackages = [ pkgs.swtpm ];
+
+    systemd.tpm2.pcrphases.enable = true;
+    boot.initrd.systemd.tpm2.pcrphases.enable = true;
     boot.initrd.systemd.services.systemd-pcrosseparator.wantedBy = [ "initrd.target" ];
 
-    systemd.services.current-uki-pcrlock = lib.mkIf (tpm == "2") {
+    systemd.services.current-uki-pcrlock = {
       wantedBy = [ "multi-user.target" ];
       description = "Update the uki current.pcrlock to the currently booted system.";
       wants = [ "esp-sync.service" ];
@@ -113,9 +132,10 @@ in
                 sbctl sign "$tmp/uki.efi"
               ''
 
-              # Clean up ESP
+              # Update unattended disk decryption lock
               ''
-                rm -rf "''${esp:?}/*"
+                systemd-pcrlock lock-uki "$tmp/uki.efi" --pcrlock="/var/lib/pcrlock.d/650-uki.pcrlock.d/future.pcrlock"
+                ${update-pcr-lock}
               ''
 
               # Move UKI to ESP
@@ -173,12 +193,6 @@ in
                 cp $boot2 "$esp/boot"
                 mkdir -p "$esp/EFI/OC"
                 mv "$tmp/uki.efi" "$esp/EFI/OC/OpenCore.efi"
-              '')
-
-              # Update unattended disk decryption lock
-              (lib.optionalString (tpm == "2") ''
-                systemd-pcrlock lock-uki "$esp/EFI/BOOT/BOOT${arch}.EFI" --pcrlock="/var/lib/pcrlock.d/650-uki.pcrlock.d/future.pcrlock"
-                ${update-pcr-lock}
               '')
 
               # Sync to all ESPs

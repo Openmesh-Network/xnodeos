@@ -8,11 +8,6 @@
 let
   cfg = config.xnode;
   disks = lib.splitString "\n" (builtins.readFile "${cfg.xnode-config}/disks");
-  tpm =
-    if (builtins.pathExists "${cfg.xnode-config}/tpm") then
-      builtins.readFile "${cfg.xnode-config}/tpm"
-    else
-      "";
 in
 {
   imports = [
@@ -21,6 +16,8 @@ in
 
   config = lib.mkMerge [
     {
+      boot.initrd.supportedFilesystems.vfat = true;
+
       fileSystems = {
         "/" = {
           label = "ROOT";
@@ -101,25 +98,14 @@ in
         );
       };
     }
-    (lib.mkIf (tpm == "2") {
+    {
       # Attempt unattended unlock using TPM2
       boot.initrd.luks.devices = lib.mapAttrs (name: disk: {
         crypttabExtraOpts = [
           "tpm2-device=auto"
         ];
       }) config.disko.devices.disk;
-    })
-    (lib.mkIf (tpm != "2") {
-      # Include plain text file to decrypt all LUKS devices unattended
-      # This is not secure; it allows a physical attacker to retrieve this key and decrypt the disks
-      boot.initrd.luks.devices = lib.mapAttrs (name: disk: {
-        keyFile = "/tmp/secret.key";
-      }) config.disko.devices.disk;
-
-      boot.initrd.secrets."/tmp/secret.key" = builtins.path {
-        path = "${cfg.xnode-config}/disk-key";
-      };
-    })
+    }
     {
       services.btrfs.autoScrub = {
         enable = true;
