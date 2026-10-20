@@ -25,7 +25,6 @@ in
     boot.kernelParams = [ "systemd.tpm2_software_fallback=yes" ];
     boot.initrd.systemd.additionalUpstreamUnits = [
       "systemd-tpm2-swtpm.service"
-      "systemd-pcrosseparator.service"
     ];
     boot.initrd.systemd.services.systemd-tpm2-swtpm.path = [
       pkgs.swtpm
@@ -48,10 +47,15 @@ in
     systemd.services.systemd-tpm2-swtpm.serviceConfig.ExecSearchPath = "${pkgs.swtpm}/bin";
     system.fsPackages = [ pkgs.swtpm ];
 
-    systemd.tpm2.pcrphases.enable = true;
     boot.initrd.systemd.tpm2.pcrphases.enable = true;
-    boot.initrd.systemd.services.systemd-pcrosseparator.wantedBy = [ "initrd.target" ];
+    boot.initrd.systemd.tpm2.pcrosseparator.enable = true;
+    systemd.tpm2.pcrphases.enable = true;
 
+    # initrd swtpm locks tpm0, new start will create tpm1, but apps expect tpm0
+    services.udev.extraRules = ''
+      SUBSYSTEM=="tpm",   KERNEL!="tpm0",   DEVPATH=="/devices/virtual/tpm/*",   TEST!="/dev/tpm0",   SYMLINK+="tpm0",   TAG+="systemd"
+      SUBSYSTEM=="tpmrm", KERNEL!="tpmrm0", DEVPATH=="/devices/virtual/tpmrm/*", TEST!="/dev/tpmrm0", SYMLINK+="tpmrm0", TAG+="systemd"
+    '';
     systemd.services.current-uki-pcrlock = {
       wantedBy = [ "multi-user.target" ];
       description = "Update the uki current.pcrlock to the currently booted system.";

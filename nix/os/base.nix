@@ -3,6 +3,8 @@
   config = {
     system.nixos.distroName = "XnodeOS";
 
+    boot.kernelPackages = pkgs.linuxPackages_latest;
+
     users.mutableUsers = false; # Prevent non-declarative users
     users.allowNoPasswordLogin = true; # Allow a system without any users that can be logged into
 
