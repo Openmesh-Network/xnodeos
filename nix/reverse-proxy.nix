@@ -315,9 +315,6 @@ in
       resolver.addresses = [ "127.0.0.1" ];
       proxyTimeout = "10m";
       clientMaxBodySize = "0";
-      appendConfig = ''
-        worker_processes auto;
-      '';
       appendHttpConfig = ''
         proxy_request_buffering off;
       '';

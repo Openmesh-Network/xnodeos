@@ -48,12 +48,6 @@ in
           )}";
         };
       }
-      {
-        # Fix unprivileged users inside of the container not being able to run ping
-        kernel.sysctl = {
-          "net.ipv4.ping_group_range" = "0 65535";
-        };
-      }
     ];
 
     # https://github.com/NixOS/nixpkgs/issues/405256
