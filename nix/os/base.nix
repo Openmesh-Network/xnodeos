@@ -29,25 +29,14 @@
     powerManagement.cpuFreqGovernor = "performance";
 
     systemd.package =
-      let
-        kernelDev = config.system.build.kernel.dev;
-        vmlinuxH = pkgs.runCommand "vmlinux.h" { } ''
-          mkdir -p $out
-          ${pkgs.bpftools}/bin/bpftool btf dump file ${kernelDev}/vmlinux format c > $out/vmlinux.h
-        '';
-      in
-      (pkgs.systemd.override { withUkify = true; }).overrideAttrs (old: {
-        # systemd-pcrlock
-        postInstall = (old.postInstall or "") + ''
-          ln -s $out/lib/systemd/systemd-pcrlock $out/bin/systemd-pcrlock
-        '';
-        # +BTF
-        mesonFlags = (old.mesonFlags or [ ]) ++ [
-          "-Dvmlinux-h=provided"
-          "-Dvmlinux-h-path=${vmlinuxH}/vmlinux.h"
-        ];
-        nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ pkgs.bpftools ];
-      });
+      (config.boot.kernelPackages.systemd.override {
+        withUkify = true;
+      }).overrideAttrs
+        (old: {
+          postInstall = (old.postInstall or "") + ''
+            ln -s $out/lib/systemd/systemd-pcrlock $out/bin/systemd-pcrlock
+          '';
+        });
 
     systemd.additionalUpstreamSystemUnits = [
       "systemd-nsresourced.service"
