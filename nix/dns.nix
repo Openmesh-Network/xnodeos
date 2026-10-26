@@ -92,7 +92,6 @@ in
         system.nssDatabases.hosts = lib.mkForce [
           "files"
           "dns"
-          "resolve"
         ];
         environment.etc."resolv.conf".source = lib.mkForce (
           pkgs.writeText "resolv.conf" ''
