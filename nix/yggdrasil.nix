@@ -267,12 +267,19 @@ in
             }
             cache 86400
 
-            rewrite {
-                # Add public.directdns. prefix to the root domain
-                name regex ^([^.]+)\.${escapedPublicDNSDomain}\.$ public.directdns.{1}.${cfg.public-dns.domain}.
+            # [*.]directdns.<addr>.domain -> [*.]directdns.<addr>.domain (unchanged)
+            rewrite stop name regex ^((?:.+\.)?directdns\.[^.]+\.${escapedPublicDNSDomain}\.)$ {1}
 
-                # Remove public.directdns. prefix
-                answer name ^public.directdns\.(.*)\.${escapedPublicDNSDomain}\.$ {1}.${cfg.public-dns.domain}.
+            # <addr>.domain -> public.directdns.<addr>.domain
+            rewrite stop {
+                name regex ^([^.]+)\.${escapedPublicDNSDomain}\.$ public.directdns.{1}.${cfg.public-dns.domain}.
+                answer name ^public\.directdns\.([^.]+)\.${escapedPublicDNSDomain}\.$ {1}.${cfg.public-dns.domain}.
+            }
+
+            # *.<addr>.domain -> *.public.directdns.<addr>.domain
+            rewrite stop {
+                name regex ^(.+)\.([^.]+)\.${escapedPublicDNSDomain}\.$ {1}.public.directdns.{2}.${cfg.public-dns.domain}.
+                answer name ^(.+)\.public\.directdns\.([^.]+)\.${escapedPublicDNSDomain}\.$ {1}.{2}.${cfg.public-dns.domain}.
             }
 
             directdns ${cfg.public-dns.domain}

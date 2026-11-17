@@ -36,7 +36,6 @@ in
 
     xnode.root = "/";
 
-    boot.initrd.systemd.enable = true;
     nixpkgs.hostPlatform =
       if (builtins.pathExists "${cfg.xnode-config}/host-platform") then
         builtins.readFile "${cfg.xnode-config}/host-platform"

@@ -20,8 +20,6 @@ let
 in
 {
   config = {
-    boot.initrd.systemd.enable = true;
-
     boot.kernelParams = [ "systemd.tpm2_software_fallback=yes" ];
     boot.initrd.systemd.additionalUpstreamUnits = [
       "systemd-tpm2-swtpm.service"

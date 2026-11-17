@@ -56,7 +56,6 @@
     );
 
     # https://github.com/nix-community/nixos-images/blob/main/nix/restore-remote-access.nix
-    boot.initrd.systemd.enable = true;
     boot.initrd.systemd.services.restore-config-from-initrd = {
       unitConfig = {
         DefaultDependencies = false;

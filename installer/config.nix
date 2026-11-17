@@ -31,8 +31,6 @@
         channel.enable = false;
       };
 
-    boot.initrd.systemd.enable = true;
-
     systemd.additionalUpstreamSystemUnits = [
       "systemd-tpm2-swtpm.service"
     ];
