@@ -29,10 +29,25 @@
     powerManagement.cpuFreqGovernor = "performance";
 
     systemd.package =
+      let
+        systemdVersion = "262.2";
+      in
       (config.boot.kernelPackages.systemd.override {
         withUkify = true;
       }).overrideAttrs
         (old: {
+          version = systemdVersion;
+          src = pkgs.fetchFromGitHub {
+            owner = "systemd";
+            repo = "systemd";
+            tag = "v${systemdVersion}";
+            hash = "sha256-BNL7ah1mtw4G94Sbuj9RL7/XDliI3lZFi0XBeQcMtqg=";
+          };
+          patches =
+            (builtins.filter (
+              patch: !pkgs.lib.hasSuffix "0004-core-don-t-taint-on-unmerged-usr.patch" (builtins.toString patch)
+            ) old.patches)
+            ++ [ ./systemd/0004-core-don-t-taint-on-unmerged-usr-v262.2.patch ];
           postInstall = (old.postInstall or "") + ''
             ln -s $out/lib/systemd/systemd-pcrlock $out/bin/systemd-pcrlock
           '';
