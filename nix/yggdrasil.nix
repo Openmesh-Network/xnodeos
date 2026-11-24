@@ -137,7 +137,7 @@ in
         systemd.services.coredns.path = [ pkgs.yggdrasil ];
         xnode.dns.zones.".".plugins = ''
           directdns_me yggdrasil.trustless.cloud
-          directdns yggdrasil.trustless.cloud
+          directdns yggdrasil.trustless.cloud { resolve_ns ${lib.boolToString config.xnode.yggdrasil.proxy.enable} }
         '';
 
         networking.getaddrinfo = {
