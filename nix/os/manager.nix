@@ -79,7 +79,9 @@ in
               };
             };
             roles = {
-              "owner" = { };
+              "owner" = {
+                pathPatterns = [ [ ".*" ] ];
+              };
             };
           };
         }) ([ "manager.xnode.local" ] ++ (lib.optionals (domain != "") [ domain ]))
