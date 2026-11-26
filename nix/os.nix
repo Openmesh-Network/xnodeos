@@ -1,5 +1,5 @@
 { inputs }:
-{ ... }:
+{ lib, config, ... }:
 {
   imports = [
     ./first-install.nix
@@ -21,11 +21,14 @@
     ./xnode-secret.nix
   ];
 
-  config = {
-    xnode.root = "/var/lib/xnode-manager/host";
-
-    xnode.yggdrasil.proxy.enable = true;
-    services.yggdrasil.settings.Peers = [ "tls://peer.yggdrasil.openmesh.cloud:9003" ];
-    services.yggdrasil-jumper.enable = true;
-  };
+  config = lib.mkMerge [
+    {
+      xnode.root = "/var/lib/xnode-manager/host";
+    }
+    (lib.mkIf config.xnode.yggdrasil.enable {
+      xnode.yggdrasil.proxy.enable = true;
+      services.yggdrasil.settings.Peers = [ "tls://peer.yggdrasil.openmesh.cloud:9003" ];
+      services.yggdrasil-jumper.enable = true;
+    })
+  ];
 }

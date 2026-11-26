@@ -68,6 +68,29 @@ in
         '';
       };
 
+      plugins = lib.mkOption {
+        type = lib.types.listOf lib.types.attrs;
+        default = [ ];
+        example = [
+          {
+            name = "pdsql";
+            repo = "github.com/wenerme/coredns-pdsql";
+            version = "e38d2e920da88b72654f5bf501277c22c1b1a962";
+          }
+        ];
+        description = ''
+          Extra plugins to install.
+        '';
+      };
+
+      vendorHash = lib.mkOption {
+        type = lib.types.str;
+        default = "sha256-Njm++WIiGBklLiZGDSNmTd09N5ZuPLNfHvCrogj1/Gk=";
+        description = ''
+          vendorHash of the install including plugins.
+        '';
+      };
+
       openFirewall = lib.mkOption {
         type = lib.types.bool;
         default = true;
@@ -149,24 +172,13 @@ in
                   position.before = "forward";
                 }
                 {
-                  name = "directdns_me";
-                  repo = "github.com/plopmenz/coredns-directdns-me";
-                  version = "663b0930fc9cd26cb9ef5c8ccda1c0590eb54ae3";
-                  position.after = "latency_sort";
-                }
-                {
-                  name = "directdns";
-                  repo = "github.com/plopmenz/coredns-directdns";
-                  version = "a1c19913dbc12277cc69f9b28ec37a80d0c571f7";
-                  position.after = "directdns_me";
-                }
-                {
                   name = "finalize";
                   repo = "github.com/tmeckel/coredns-finalizer";
                   version = "f9c997c8e5fefa742bd0f67994fee9b5bbd9148e";
                 }
-              ];
-              vendorHash = "sha256-37CHvYPLZ1UUgAygNJmM8BqJWRPCaKpeyKx8NCycilY=";
+              ]
+              ++ cfg.plugins;
+              vendorHash = cfg.vendorHash;
             }).overrideAttrs
               (old: {
                 doCheck = false;

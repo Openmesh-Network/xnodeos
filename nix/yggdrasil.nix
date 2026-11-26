@@ -135,10 +135,27 @@ in
           config.services.yggdrasil.group
         ];
         systemd.services.coredns.path = [ pkgs.yggdrasil ];
-        xnode.dns.zones.".".plugins = ''
-          directdns_me yggdrasil.trustless.cloud
-          directdns yggdrasil.trustless.cloud { resolve_ns ${lib.boolToString config.xnode.yggdrasil.proxy.enable} }
-        '';
+        xnode.dns = {
+          plugins = [
+            {
+              name = "directdns_me";
+              repo = "github.com/plopmenz/coredns-directdns-me";
+              version = "663b0930fc9cd26cb9ef5c8ccda1c0590eb54ae3";
+              position.after = "latency_sort";
+            }
+            {
+              name = "directdns";
+              repo = "github.com/plopmenz/coredns-directdns";
+              version = "a1c19913dbc12277cc69f9b28ec37a80d0c571f7";
+              position.after = "directdns_me";
+            }
+          ];
+          vendorHash = "sha256-37CHvYPLZ1UUgAygNJmM8BqJWRPCaKpeyKx8NCycilY=";
+          zones.".".plugins = ''
+            directdns_me yggdrasil.trustless.cloud
+            directdns yggdrasil.trustless.cloud { resolve_ns ${lib.boolToString config.xnode.yggdrasil.proxy.enable} }
+          '';
+        };
 
         networking.getaddrinfo = {
           enable = true;
